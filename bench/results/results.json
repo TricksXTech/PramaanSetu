@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-10-31T09:39:24.3297223Z",
-  "commit_hash": "m5-production-clean",
+  "timestamp": "2026-10-31T09:42:58.5945166Z",
+  "commit_hash": "2d8119b",
   "hardware": {
     "os": "windows",
     "arch": "amd64",
     "cpu_cores": 8,
     "go_version": "go1.26.4",
-    "memory_alloc_mb": "3.49 MB"
+    "memory_alloc_mb": "3.21 MB"
   },
   "postgres_config": {
     "checkpoint_completion_target": "0.9",
@@ -22,9 +22,9 @@
     {
       "name": "CSV Ingest Staging Throughput",
       "target": "\u003e= 2,000 rows/sec",
-      "achieved": "3186357 rows/sec (elapsed: 16ms)",
+      "achieved": "4831151 rows/sec (elapsed: 10ms)",
       "passed": true,
-      "throughput_ops_per_sec": 3186357.292615935,
+      "throughput_ops_per_sec": 4831151.2633460555,
       "p50_latency": 0,
       "p95_latency": 0,
       "p99_latency": 0,
@@ -33,9 +33,9 @@
     {
       "name": "V1-V9 End-to-End Validation Engine",
       "target": "\u003e= 500 rows/sec",
-      "achieved": "1318774 rows/sec (elapsed: 8ms)",
+      "achieved": "1274876 rows/sec (elapsed: 8ms)",
       "passed": true,
-      "throughput_ops_per_sec": 1318774.0676267343,
+      "throughput_ops_per_sec": 1274876.0183072197,
       "p50_latency": 0,
       "p95_latency": 0,
       "p99_latency": 0,
@@ -44,11 +44,11 @@
     {
       "name": "V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking)",
       "target": "p95 \u003c 50ms",
-      "achieved": "p50: 0s, p95: 1.093ms, p99: 1.606ms",
+      "achieved": "p50: 0s, p95: 1.0651ms, p99: 1.6103ms",
       "passed": true,
       "p50_latency": 0,
-      "p95_latency": 1093000,
-      "p99_latency": 1606000,
+      "p95_latency": 1065100,
+      "p99_latency": 1610300,
       "operations": 1000
     },
     {
@@ -64,11 +64,11 @@
     {
       "name": "Verifier Gate (Ed25519 Signature + Dynamic Consent)",
       "target": "\u003c 50ms",
-      "achieved": "p50: 0s, p95: 0s, p99: 1.0942ms",
+      "achieved": "p50: 0s, p95: 404.8µs, p99: 1.0288ms",
       "passed": true,
       "p50_latency": 0,
-      "p95_latency": 0,
-      "p99_latency": 1094200,
+      "p95_latency": 404800,
+      "p99_latency": 1028800,
       "operations": 5000
     }
   ],

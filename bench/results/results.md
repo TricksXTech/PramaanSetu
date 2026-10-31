@@ -1,7 +1,7 @@
 # APAAR Verification System - Performance Benchmark Results
 
-> **Generated**: 2026-10-31 09:39:24 UTC  
-> **Commit**: `m5-production-clean`  
+> **Generated**: 2026-10-31 09:42:58 UTC  
+> **Commit**: `2d8119b`  
 > **Overall Status**: **ALL TARGETS MET (OPTIMAL PERFORMANCE)**  
 
 ## 1. Hardware & Environment Specifications
@@ -11,7 +11,7 @@
 | **Operating System** | windows / amd64 |
 | **Logical CPU Cores** | 8 cores |
 | **Go Runtime Version** | go1.26.4 |
-| **Active Heap Memory** | 3.49 MB |
+| **Active Heap Memory** | 3.21 MB |
 
 ## 2. PostgreSQL 16 Target Configuration
 
@@ -30,18 +30,18 @@
 
 | Benchmark Workload | Target SLA | Measured Performance | Result |
 |---|---|---|:---:|
-| **CSV Ingest Staging Throughput** | `>= 2,000 rows/sec` | 3186357 rows/sec (elapsed: 16ms) | ✅ PASS |
-| **V1-V9 End-to-End Validation Engine** | `>= 500 rows/sec` | 1318774 rows/sec (elapsed: 8ms) | ✅ PASS |
-| **V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking)** | `p95 < 50ms` | p50: 0s, p95: 1.093ms, p99: 1.606ms | ✅ PASS |
+| **CSV Ingest Staging Throughput** | `>= 2,000 rows/sec` | 4831151 rows/sec (elapsed: 10ms) | ✅ PASS |
+| **V1-V9 End-to-End Validation Engine** | `>= 500 rows/sec` | 1274876 rows/sec (elapsed: 8ms) | ✅ PASS |
+| **V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking)** | `p95 < 50ms` | p50: 0s, p95: 1.0651ms, p99: 1.6103ms | ✅ PASS |
 | **AICTE Central Rollup Query Aggregation** | `< 100ms` | p50: 0s, p95: 0s, p99: 0s | ✅ PASS |
-| **Verifier Gate (Ed25519 Signature + Dynamic Consent)** | `< 50ms` | p50: 0s, p95: 0s, p99: 1.0942ms | ✅ PASS |
+| **Verifier Gate (Ed25519 Signature + Dynamic Consent)** | `< 50ms` | p50: 0s, p95: 404.8µs, p99: 1.0288ms | ✅ PASS |
 
 ## 4. Latency Percentile Summary
 
 | Metric | Operations | p50 | p95 | p99 |
 |---|---|---|---|---|
-| CSV Ingest Staging Throughput | 50000 | N/A (Throughput: 3186357 rows/s) | - | - |
-| V1-V9 End-to-End Validation Engine | 10000 | N/A (Throughput: 1318774 rows/s) | - | - |
+| CSV Ingest Staging Throughput | 50000 | N/A (Throughput: 4831151 rows/s) | - | - |
+| V1-V9 End-to-End Validation Engine | 10000 | N/A (Throughput: 1274876 rows/s) | - | - |
 | V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking) | 1000 | N/A (Throughput: 0 rows/s) | - | - |
 | AICTE Central Rollup Query Aggregation | 1000 | N/A (Throughput: 0 rows/s) | - | - |
 | Verifier Gate (Ed25519 Signature + Dynamic Consent) | 5000 | N/A (Throughput: 0 rows/s) | - | - |
