@@ -30,6 +30,21 @@ func NewService(db *pgxpool.Pool) *Service {
 	return &Service{db: db}
 }
 
+func canonicalMetadata(b []byte) string {
+	if len(b) == 0 || string(b) == "null" {
+		return ""
+	}
+	var val any
+	if err := json.Unmarshal(b, &val); err != nil {
+		return string(b)
+	}
+	normalized, err := json.Marshal(val)
+	if err != nil {
+		return string(b)
+	}
+	return string(normalized)
+}
+
 // ComputeEventHash computes SHA-256(prev_hash || canonical event bytes)
 // Rule #7: Tamper-evident hash chain. No private payloads logged.
 func ComputeEventHash(prevHash string, actorID *uuid.UUID, role, action, targetType, targetID string, ts time.Time, metadata []byte) string {
@@ -45,8 +60,8 @@ func ComputeEventHash(prevHash string, actorID *uuid.UUID, role, action, targetT
 		action,
 		targetType,
 		targetID,
-		ts.UTC().Format(time.RFC3339Nano),
-		string(metadata),
+		ts.UTC().Truncate(time.Microsecond).Format("2006-01-02T15:04:05.000000Z"),
+		canonicalMetadata(metadata),
 	)
 
 	sum := sha256.Sum256([]byte(canonicalString))
@@ -96,6 +111,7 @@ func (s *Service) Record(ctx context.Context, tx pgx.Tx, event contracts.AuditEv
 	if occurredAt.IsZero() {
 		occurredAt = time.Now().UTC()
 	}
+	occurredAt = occurredAt.UTC().Truncate(time.Microsecond)
 
 	eventHash := ComputeEventHash(
 		prevHash,

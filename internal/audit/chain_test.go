@@ -105,3 +105,28 @@ func TestAuditLog_ZeroPersonalData(t *testing.T) {
 		}
 	}
 }
+
+func TestAuditHashChain_MicrosecondAndCanonicalJSON(t *testing.T) {
+	actorID := uuid.New()
+	role := "aicte_admin"
+	action := "USER_LOGIN_SUCCESS"
+	targetType := "user"
+	targetID := actorID.String()
+
+	// High precision timestamp (e.g. from Go runtime with nanoseconds)
+	tsNano := time.Date(2026, 10, 31, 13, 3, 15, 359801252, time.UTC)
+	// Truncated timestamp (as stored by PostgreSQL TIMESTAMPTZ)
+	tsMicro := time.Date(2026, 10, 31, 13, 3, 15, 359801000, time.UTC)
+
+	// In-memory compact JSON
+	metaCompact := []byte(`{"ip":"127.0.0.1"}`)
+	// PostgreSQL JSONB formatted JSON (with space after colon)
+	metaSpaced := []byte(`{"ip": "127.0.0.1"}`)
+
+	hashRecorded := audit.ComputeEventHash(audit.GenesisHash, &actorID, role, action, targetType, targetID, tsNano, metaCompact)
+	hashVerified := audit.ComputeEventHash(audit.GenesisHash, &actorID, role, action, targetType, targetID, tsMicro, metaSpaced)
+
+	if hashRecorded != hashVerified {
+		t.Fatalf("expected hashRecorded to match hashVerified despite PostgreSQL microsecond truncation and JSONB spacing; got %s != %s", hashRecorded, hashVerified)
+	}
+}
