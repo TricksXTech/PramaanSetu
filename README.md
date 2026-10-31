@@ -3,6 +3,7 @@
 > **Smart India Hackathon (36-Hour Prototype)**  
 > **Single Source of Truth**: *Revised SIH Build Plan (Revision 2)*  
 > **Release Candidate**: `rc2` (Commit: `01df344`)  
+> **Live Cloud Deployment**: [https://pramaansetu.onrender.com](https://pramaansetu.onrender.com) &bull; [System Health](https://pramaansetu.onrender.com/healthz)  
 > **System Architecture**: Pure Go Binary + PostgreSQL 16 (Strict 2-Container Stack)
 
 ---

@@ -84,7 +84,7 @@ Once Render finishes the initial build (approx. 2 minutes):
    ```
 
 2. **Access Web Application**:
-   Navigate to `https://<your-app-name>.onrender.com/login`
+   Navigate to `https://pramaansetu.onrender.com/login`
 
 3. **Sign In with Pre-Seeded Accounts** (Password: `Password@123`):
    * **AICTE National Admin**: `admin@aicte.gov.in`
