@@ -30,6 +30,7 @@ import (
 	"apaar-verify/internal/validate"
 	"apaar-verify/internal/webhook"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/render"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -2281,25 +2282,45 @@ func redirectRoleHome(c *gin.Context, role string) {
 	}
 }
 
+type templateRenderer struct {
+	templates map[string]*template.Template
+}
+
+func (t *templateRenderer) Instance(name string, data any) render.Render {
+	tmpl, ok := t.templates[name]
+	if !ok {
+		log.Printf("[Template] Warning: template %s not found in registry", name)
+	}
+	return render.HTML{
+		Template: tmpl,
+		Name:     "",
+		Data:     data,
+	}
+}
+
 func loadTemplates(r *gin.Engine) {
-	tmpl := template.New("")
-	patterns := []string{
-		"web/templates/*.html",
+	renderer := &templateRenderer{
+		templates: make(map[string]*template.Template),
 	}
 
-	for _, p := range patterns {
-		matches, err := filepath.Glob(p)
-		if err == nil {
-			for _, m := range matches {
-				name := filepath.Base(m)
-				b, err := os.ReadFile(m)
-				if err == nil {
-					t := tmpl.New(name)
-					_, _ = t.Parse(string(b))
-				}
-			}
+	layoutPath := filepath.Join("web", "templates", "layout.html")
+	files, err := filepath.Glob(filepath.Join("web", "templates", "*.html"))
+	if err != nil {
+		log.Fatalf("[Template] Failed to glob templates: %v", err)
+	}
+
+	for _, file := range files {
+		name := filepath.Base(file)
+		if name == "layout.html" {
+			continue
+		}
+
+		if name == "certificate.html" || name == "report_printable.html" {
+			renderer.templates[name] = template.Must(template.ParseFiles(file))
+		} else {
+			renderer.templates[name] = template.Must(template.ParseFiles(layoutPath, file))
 		}
 	}
 
-	r.SetHTMLTemplate(tmpl)
+	r.HTMLRender = renderer
 }
