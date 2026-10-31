@@ -1,18 +1,20 @@
 # Build stage
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
+
+# Enable automatic toolchain resolution if required
+ENV GOTOOLCHAIN=auto
 
 # Install build dependencies
 RUN apk add --no-cache git gcc musl-dev
 
 # Copy module files and download dependencies
 COPY go.mod go.sum ./
-RUN sed -i 's/^go 1.26.*/go 1.24/' go.mod && go mod download
+RUN go mod download
 
 # Copy source tree
 COPY . .
-RUN sed -i 's/^go 1.26.*/go 1.24/' go.mod
 
 # Build application server, seed, and reset utilities
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/server ./cmd/server
@@ -43,4 +45,3 @@ EXPOSE 8080
 HEALTHCHECK --interval=5s --timeout=3s --retries=5 CMD curl -f http://localhost:${PORT:-8080}/healthz || exit 1
 
 CMD ["/app/server"]
-
