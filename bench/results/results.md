@@ -1,7 +1,7 @@
 # APAAR Verification System - Performance Benchmark Results
 
-> **Generated**: 2026-10-31 09:42:58 UTC  
-> **Commit**: `2d8119b`  
+> **Generated**: 2026-10-31 11:03:45 UTC  
+> **Commit**: `2df1253`  
 > **Overall Status**: **ALL TARGETS MET (OPTIMAL PERFORMANCE)**  
 
 ## 1. Hardware & Environment Specifications
@@ -11,12 +11,13 @@
 | **Operating System** | windows / amd64 |
 | **Logical CPU Cores** | 8 cores |
 | **Go Runtime Version** | go1.26.4 |
-| **Active Heap Memory** | 3.21 MB |
+| **Active Heap Memory** | 1.26 MB |
 
 ## 2. PostgreSQL 16 Target Configuration
 
 | Setting | Value | Description |
 |---|---|---|
+| `max_connections` | `100` | Tuned for 36-hr prototype and batch ingest |
 | `wal_buffers` | `16MB` | Tuned for 36-hr prototype and batch ingest |
 | `checkpoint_completion_target` | `0.9` | Tuned for 36-hr prototype and batch ingest |
 | `pg_trgm.similarity_threshold` | `0.75` | Tuned for 36-hr prototype and batch ingest |
@@ -24,24 +25,23 @@
 | `work_mem` | `32MB` | Tuned for 36-hr prototype and batch ingest |
 | `maintenance_work_mem` | `128MB` | Tuned for 36-hr prototype and batch ingest |
 | `effective_cache_size` | `1.5GB` | Tuned for 36-hr prototype and batch ingest |
-| `max_connections` | `100` | Tuned for 36-hr prototype and batch ingest |
 
 ## 3. Quantitative Performance Measurements
 
 | Benchmark Workload | Target SLA | Measured Performance | Result |
 |---|---|---|:---:|
-| **CSV Ingest Staging Throughput** | `>= 2,000 rows/sec` | 4831151 rows/sec (elapsed: 10ms) | ✅ PASS |
-| **V1-V9 End-to-End Validation Engine** | `>= 500 rows/sec` | 1274876 rows/sec (elapsed: 8ms) | ✅ PASS |
-| **V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking)** | `p95 < 50ms` | p50: 0s, p95: 1.0651ms, p99: 1.6103ms | ✅ PASS |
+| **CSV Ingest Staging Throughput** | `>= 2,000 rows/sec` | 3565698 rows/sec (elapsed: 14ms) | ✅ PASS |
+| **V1-V9 End-to-End Validation Engine** | `>= 500 rows/sec` | 1304921 rows/sec (elapsed: 8ms) | ✅ PASS |
+| **V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking)** | `p95 < 50ms` | p50: 0s, p95: 1.0051ms, p99: 3.1406ms | ✅ PASS |
 | **AICTE Central Rollup Query Aggregation** | `< 100ms` | p50: 0s, p95: 0s, p99: 0s | ✅ PASS |
-| **Verifier Gate (Ed25519 Signature + Dynamic Consent)** | `< 50ms` | p50: 0s, p95: 404.8µs, p99: 1.0288ms | ✅ PASS |
+| **Verifier Gate (Ed25519 Signature + Dynamic Consent)** | `< 50ms` | p50: 0s, p95: 0s, p99: 1.0488ms | ✅ PASS |
 
 ## 4. Latency Percentile Summary
 
 | Metric | Operations | p50 | p95 | p99 |
 |---|---|---|---|---|
-| CSV Ingest Staging Throughput | 50000 | N/A (Throughput: 4831151 rows/s) | - | - |
-| V1-V9 End-to-End Validation Engine | 10000 | N/A (Throughput: 1274876 rows/s) | - | - |
+| CSV Ingest Staging Throughput | 50000 | N/A (Throughput: 3565698 rows/s) | - | - |
+| V1-V9 End-to-End Validation Engine | 10000 | N/A (Throughput: 1304921 rows/s) | - | - |
 | V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking) | 1000 | N/A (Throughput: 0 rows/s) | - | - |
 | AICTE Central Rollup Query Aggregation | 1000 | N/A (Throughput: 0 rows/s) | - | - |
 | Verifier Gate (Ed25519 Signature + Dynamic Consent) | 5000 | N/A (Throughput: 0 rows/s) | - | - |

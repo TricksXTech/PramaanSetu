@@ -252,3 +252,27 @@ footer {
   background: white;
 }
 
+/* Projector & Responsive Display Optimization (1280x720 & 1920x1080) */
+@media screen and (max-width: 1280px) {
+  body {
+    font-size: 15px;
+  }
+  main {
+    padding: 1.25rem;
+    max-width: 100%;
+  }
+  table {
+    overflow-x: auto;
+  }
+}
+
+@media screen and (min-width: 1920px) {
+  body {
+    font-size: 17px;
+  }
+  main {
+    max-width: 1400px;
+  }
+}
+
+

@@ -21,7 +21,7 @@ All demo accounts share the uniform password **`Password@123`**. The presenter s
 
 ---
 
-## 5-Minute Timed Presentation Breakdown
+## 1. 5-Minute Timed Presentation Breakdown
 
 ### 00:00 - 01:00 &bull; Phase 1: Batch Ingestion & Row Outcomes (Rules V1–V6)
 
@@ -115,18 +115,67 @@ All demo accounts share the uniform password **`Password@123`**. The presenter s
 * **Goal**: Reiterate adherence to fixed stack and proven scale metrics.
 * **Presenter Talking Points**:
   - **Fixed Stack Integrity**: Pure Go binary + PostgreSQL 16. Zero Redis, zero Kafka, zero Python ML services.
-  - **High-Throughput Ingestion**: Benchmarked at **$\ge 3,000$ rows/sec staging** and **$\ge 1,000$ rows/sec full pipeline validation**.
-  - **Production Roadmap**: Designed to scale to 300 Million student records using PostgreSQL declarative partitioning and River job workers.
+  - **High-Throughput Ingestion**: Benchmarked at **$\ge 3,500$ rows/sec staging** and **$\ge 1,300$ rows/sec validation**.
+  - **Production Roadmap**: Extrapolates to 300 Million student records (~2.5 TB storage) using PostgreSQL declarative partitioning and River job workers.
   - **Closing Statement**: *"The APAAR Student Data Verification System empowers AICTE with real-time regulatory oversight, prevents fraudulent double enrolments, protects institutional autonomy through tenant isolation, and places students in sovereign control of their verifiable academic credentials."*
 * **Open for Jury Q&A**.
 
 ---
 
-## Emergency Troubleshooting Cheatsheet
+## 2. Alternative Demo Version A: The 2-Minute Fast Track (Time-Cut Failsafe)
+
+Use this script if the jury informs the team that presentation time has been reduced to 2 minutes:
+
+1. **00:00 - 00:30 &bull; High-Speed Ingestion & Granular Outcomes**:
+   - Log in as DTU Admin (`admin@dtu.ac.in`), upload `test_admissions.csv`.
+   - Point to row outcomes: *"Notice that out of 10 rows, 1 is accepted, 7 are held, and 2 rejected. Rule V1 catches bad APAAR syntax, Rule V5 holds admissions exceeding DTU's regular intake cap of 2 seats, and Rule V6 catches contradictory foreign national flags &mdash; with zero student data overwritten."*
+2. **00:30 - 01:15 &bull; Cryptographic Attestation & Dynamic Consent Gate**:
+   - Go to `/institution/credentials`, attest Rohan Gupta's enrolment, generating an Ed25519 digital signature and opaque QR code.
+   - Switch to Verifier (`verifier@tcs.com`), query credential: *"Notice the status is `Consent Required` with zero student personal data disclosed."*
+   - Switch to Student (`student1@example.com`), approve 30-day verification consent for Name & Program.
+   - Return to Verifier: *"With active consent, only permitted fields appear. When revoked, access is denied immediately with zero authorization caching."*
+3. **01:15 - 02:00 &bull; National Review Leads, Audit Chain & Architectural Truth**:
+   - Log in as AICTE Admin (`admin@aicte.gov.in`), open Review Queue (`/aicte/reviews`): *"Rule V7 catches a student concurrently enrolled at DTU and COEP with masked identifiers. Rule V8 catches spelling variations using indexed DOB blocking and trigram matching in 1 ms without full Cartesian scans."*
+   - Open `/aicte/audit/verify`: *"The entire system is anchored by a SHA-256 tamper-evident hash chain running on a pure Go + PostgreSQL 16 stack with zero Kafka or Redis."*
+
+---
+
+## 3. Alternative Demo Version B: The 60-Second Lightning Pitch
+
+Use this script if the jury arrives late or allows only 1 minute total:
+
+* **00:00 - 00:20 (The Problem & Solution)**:
+  - *"In 60 seconds, we solve the two biggest gaps in higher education data: institutional over-admission fraud and verifier privacy invasion. Built in pure Go and PostgreSQL 16 with zero cloud dependencies."*
+* **00:20 - 00:45 (The Live Proof)**:
+  - Open `/institution/dashboard`: Show DTU's B.Tech CSE intake cap of 2. Click upload &mdash; rows 3-6 instantly held by Rule V5, preventing illegal batch enrolment.
+  - Open `/verifier/verify`: Query Rohan Gupta's credential. *"Format valid, Ed25519 signature valid, but zero personal data leaked because the student has not granted active consent."*
+  - Switch to Student (`/student/consent`), grant consent, re-query: *"Now, and only now, does TCS see the verified academic record."*
+* **00:45 - 01:00 (Scale & Integrity)**:
+  - *"Benchmarked at 3,500+ rows/second with a SHA-256 tamper-evident audit log. 100% verified across all 10 SIH requirements."*
+
+---
+
+## 4. One-Line Jury Defense Q&A Cue Cards
+
+| Jury Question | One-Line Authoritative Answer |
+|---|---|
+| **1. Why Go and HTMX instead of React and Node?** | Go compiles into a single, high-performance static binary with zero runtime overhead, while HTMX delivers interactive real-time updates directly from server-rendered HTML without 150MB of client-side JavaScript bundles. |
+| **2. Why no Kafka, Redis, or external Python ML?** | A 36-hour hackathon prototype and production system alike gain higher reliability and zero distributed-state failures by utilizing PostgreSQL 16's native transactional locks, GIN trigram indexes, and River background queues inside the same ACID boundary. |
+| **3. Why are duplicate matches called "leads" instead of "fraud verdicts"?** | Because algorithmic identity similarity and concurrent enrolments can stem from legal dual degrees, state quota reallocations, or typographical errors; AICTE policy requires an audited human regulatory determination before adverse institutional action. |
+| **4. What does a valid Ed25519 signature prove, and what does it NOT prove?** | It cryptographically proves that the issuing institution attested the exact canonical admission payload at a frozen enrolment version; it does not prove the real-world factual truth of external documents prior to institutional entry. |
+| **5. How does consent revocation work, and what is its operational limit?** | Consent is evaluated dynamically in SQL on every query with zero authorization caching, guaranteeing instant future access denial; its physical limit is that it cannot redact or erase data already viewed or exported by an external verifier in the past. |
+| **6. How would the system handle 300 Million student records and what was measured?** | We measured 3,500+ rows/sec staging, 1,300+ rows/sec validation, and 1.01ms trigram matching on synthetic data, extrapolating an active 300M database footprint of ~415GB (or ~2.5TB with replicas, WAL, and backups), scaled via PostgreSQL declarative partitioning. |
+| **7. What would be required for integration with the real APAAR registry?** | Replacing our mock adapter (`provenance: "mock"`) with production HTTPS client calls to the Ministry of Education's DigiLocker/APAAR API gateway using mutual TLS and signed OAuth2 institutional credentials. |
+| **8. How is institutional tenant isolation enforced and verified?** | Tenant isolation is enforced in every SQL query using parameterized tenant conditions (`institution_id = $1`) rather than UI hiding, verified by our systematic cross-tenant test suite where cross-tenant reads and writes return strict 403 Forbidden. |
+| **9. What components in the system are mocked?** | Only the external national APAAR registry lookup is mocked with explicit `provenance: "mock"` tags; all database operations, validation rules V1-V9, cryptographic Ed25519 signatures, dynamic consent gates, and audit chains run 100% live code. |
+
+---
+
+## 5. Emergency Troubleshooting Cheatsheet
 
 | Symptom | Cause | One-Line Fix Command |
 |---|---|---|
-| Database connection refused | Docker container paused | `docker-compose up -d db` |
+| Database connection refused | Docker container paused | `docker compose up -d db` |
 | Seeding data needed | Fresh baseline desired | `go run ./cmd/seed/main.go` |
 | Ingestion queue paused | River worker restarted | Automatic resume upon query; or restart `./bin/server` |
 | Port 8080 already in use | Stale process | `Stop-Process -Name server -Force` (PowerShell) |
