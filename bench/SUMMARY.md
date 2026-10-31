@@ -114,3 +114,4 @@ Every proposed scaling component addresses an explicit measured operational boun
 | **Active Dynamic Consent Check** | `0.09 ms` ($p50$) | Dynamic SQL evaluation, zero cache | Verified |
 | **AICTE National Rollup Query** | `0.42 ms` ($p95$) | Precomputed `rollup_enrolment` query | Verified |
 | **Audit Genesis-to-Head Verification**| `1 ms` per 10k events | SHA-256 sequential link validation | Verified |
+

@@ -151,3 +151,4 @@
   - **PgBouncer**: Deploy connection pooler when active institution connections exceed 150.
   - **Read Replicas**: Route heavy national analytical queries to read replicas if daytime primary query latency exceeds 50 ms.
   - **Queue Evolution**: Transition River to Kafka/RabbitMQ only if queue WAL writes consume $> 25\%$ disk IOPS.
+

@@ -113,3 +113,4 @@ This document captures the exact visual states and data payloads of every screen
   - Hash chain status card: Total events verified, genesis hash, head hash.
   - Visual verification check: **"0 Broken Links - Audit Chain Intact"**.
   - Simulated Tamper Test: Flips a single byte in an audit record; system immediately flags exact broken link number.
+

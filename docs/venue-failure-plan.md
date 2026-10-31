@@ -121,3 +121,4 @@ flowchart TD
 * [ ] Passwords pre-filled on login screen; presenter never types passwords live.
 * [ ] Terminal open at project root with `make smoke` and `make reset` ready in command history (`Up Arrow`).
 * [ ] Phone camera tested against local certificate QR code (`/credentials/:id/certificate`).
+

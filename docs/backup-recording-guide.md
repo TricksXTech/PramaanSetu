@@ -60,3 +60,4 @@ Verify that each recorded MP4 file:
 1. Plays natively in VLC, QuickTime, and Windows Media Player without third-party codec prompts.
 2. Contains clear, audible English audio narration without background hiss.
 3. Is copied onto both physical USB drives (`Primary` and `Secondary`).
+
