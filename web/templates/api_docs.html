@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenAPI 3 Specification &bull; APAAR Verification System</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 2rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    h1 { margin-top: 0; color: #1e3a8a; }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-post { background: #dcfce7; color: #15803d; }
+    .badge-get { background: #e0f2fe; color: #0369a1; }
+    .badge-patch { background: #fef3c7; color: #b45309; }
+    .endpoint {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: #fafafa;
+    }
+    .endpoint-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    pre {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+    }
+    th { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h1>APAAR Verification API Documentation</h1>
+      <p style="color: #64748b; margin: 0;">OpenAPI 3.0.3 &bull; Local Offline Reader &bull; Zero External CDN</p>
+    </div>
+    <div>
+      <a href="/docs/openapi.yaml" download class="badge badge-get" style="text-decoration: none; padding: 0.5rem 0.8rem; font-size: 0.85rem;">
+        &DownArrow; Download openapi.yaml
+      </a>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">
+      <span class="badge badge-post">POST</span>
+      <span>/api/v1/uploads</span>
+    </div>
+    <p>Upload student admission CSV roster with tenant isolation and idempotency lock.</p>
+    <table>
+      <tr><th>Header</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>X-API-Key</code></td><td>Yes</td><td>Scoped API key with <code>uploads:write</code> permission</td></tr>
+      <tr><td><code>Idempotency-Key</code></td><td>Yes</td><td>UUID or client token preventing duplicate submissions</td></tr>
+    </table>
+    <h4>Success Response (202 Accepted)</h4>
+    <pre>{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "institution_id": "INST-AICTE-001",
+  "filename": "dtu_admissions_2024.csv",
+  "status": "processing",
+  "total_rows": 50,
+  "idempotency_key": "idem-2024-oct-dtu-001"
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">
+      <span class="badge badge-get">GET</span>
+      <span>/api/v1/uploads/{id}</span>
+    </div>
+    <p>Retrieve processing outcome counts and row-by-row validation verdicts.</p>
+    <table>
+      <tr><th>Header</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>X-API-Key</code></td><td>Yes</td><td>Scoped API key with <code>uploads:read</code> permission</td></tr>
+    </table>
+    <h4>Success Response (200 OK)</h4>
+    <pre>{
+  "job": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "institution_id": "INST-AICTE-001",
+    "status": "completed",
+    "total_rows": 2,
+    "accepted_rows": 1,
+    "flagged_rows": 1
+  },
+  "rows": [
+    { "row_number": 1, "outcome": "accepted" },
+    { "row_number": 2, "outcome": "flagged_held", "rule_code": "V5", "reason": "Intake capacity exceeded" }
+  ]
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">
+      <span class="badge badge-patch">PATCH</span>
+      <span>/api/v1/enrolments/{id}</span>
+    </div>
+    <p>Update tenant-owned enrolment with optimistic version check. Identity modification strictly rejected.</p>
+    <table>
+      <tr><th>Header</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>X-API-Key</code></td><td>Yes</td><td>Scoped API key with <code>enrolments:write</code> permission</td></tr>
+    </table>
+    <h4>Request Body</h4>
+    <pre>{
+  "expected_version": 1,
+  "category": "OBC",
+  "admission_type": "Regular"
+}</pre>
+    <h4>Success Response (200 OK)</h4>
+    <pre>{
+  "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "version": 2,
+  "status": "submitted"
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-title">
+      <span class="badge badge-get">GET</span>
+      <span>/api/v1/credentials/{id}/verify</span>
+    </div>
+    <p>Verify Ed25519 digital signature and evaluate dynamic student consent.</p>
+    <table>
+      <tr><th>Header</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>X-Verifier-ID</code></td><td>Yes</td><td>Authenticated verifier UUID</td></tr>
+    </table>
+    <h4>Verified with Active Consent (200 OK)</h4>
+    <pre>{
+  "credential_id": "e58ed763-928c-4155-bee9-fdbaaadc15f3",
+  "status": "verified",
+  "signature_valid": true,
+  "consent_active": true,
+  "permitted_fields": {
+    "name": "Rohan Gupta",
+    "program_code": "BTECH-CSE",
+    "academic_year": "2024-25",
+    "status": "attested"
+  }
+}</pre>
+    <h4>Verified without Active Consent (200 OK - Zero PII)</h4>
+    <pre>{
+  "credential_id": "e58ed763-928c-4155-bee9-fdbaaadc15f3",
+  "status": "consent_required",
+  "signature_valid": true,
+  "consent_active": false,
+  "consent_required": true
+}</pre>
+  </div>
+</div>
+
+</body>
+</html>

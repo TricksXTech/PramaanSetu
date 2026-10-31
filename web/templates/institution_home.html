@@ -1,0 +1,248 @@
+{{define "title"}}Institution Portal &bull; APAAR Verification{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">Institution Admission Portal</h2>
+      <p class="card-subtitle">Tenant: <strong>{{.Institution.Name}}</strong> (<code>{{.Institution.ID}}</code>)</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <a href="/institution/credentials" class="btn btn-primary btn-sm" style="text-decoration: none;">
+        &#128274; Credential Management
+      </a>
+      <a href="/institution/reports" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        &#128202; Reports
+      </a>
+      <a href="/institution/api-keys" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        &#128273; API Keys
+      </a>
+      <a href="/institution/template.csv" class="btn btn-secondary btn-sm" download="admission_template.csv">
+        &DownArrow; CSV Template
+      </a>
+      <span class="badge badge-success" style="align-self: center;">Tenant: {{.Institution.ID}}</span>
+    </div>
+  </div>
+
+  <!-- HTMX Upload Form -->
+  <div style="margin-top: 1.5rem; padding: 1.25rem; border: 1px dashed var(--border); border-radius: 8px; background: #fafafa;">
+    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Upload Admission CSV</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+      Upload student admission rosters keyed by APAAR ID. Enforces rules V1-V6, intake reconciliation (V5), policy checks (V6), and tenant isolation.
+    </p>
+
+    <form hx-post="/institution/upload"
+          hx-encoding="multipart/form-data"
+          hx-target="#upload-progress"
+          hx-swap="innerHTML">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <input type="file" name="csv_file" accept=".csv" required style="max-width: 400px;">
+        <button type="submit" class="btn btn-primary">Upload &amp; Reconcile Batch</button>
+      </div>
+    </form>
+
+    <div id="upload-progress"></div>
+  </div>
+</div>
+
+<!-- Minimal Institution Dashboard: Reads ONLY from rollup_enrolment (Dev C) -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+    <div>
+      <h3 class="card-title" style="margin-bottom: 0.2rem;">Programme Enrolment &amp; Intake Reconciliation</h3>
+      <p class="card-subtitle" style="margin-bottom: 0;">Aggregated directly from <code>rollup_enrolment</code> &bull; Last updated: <span style="font-weight: 600;">Just now</span></p>
+    </div>
+    <span class="badge badge-info">Academic Year: 2024-25</span>
+  </div>
+
+  {{if .RollupStats}}
+  <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: center;">
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Programme</th>
+            <th>Regular Cap</th>
+            <th>Accepted Regular</th>
+            <th>Supernumerary</th>
+            <th>Held (Cap Overflow)</th>
+            <th>Open Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .RollupStats}}
+          <tr>
+            <td><strong>{{.ProgramID}}</strong></td>
+            <td>{{.RegularLimit}}</td>
+            <td><span class="badge badge-success">{{.TotalEnrolled}}</span></td>
+            <td>{{.Supernumerary}}</td>
+            <td>
+              {{if gt .HeldCount 0}}
+                <span class="badge badge-warning">{{.HeldCount}} held</span>
+              {{else}}
+                <span style="color: var(--text-muted);">0</span>
+              {{end}}
+            </td>
+            <td>
+              {{if gt .FlaggedCount 0}}
+                <span class="badge" style="background: #fecaca; color: #991b1b;">{{.FlaggedCount}} flags</span>
+              {{else}}
+                <span style="color: var(--success);">&#10003; 0</span>
+              {{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Chart.js local Bar Chart -->
+    <div style="max-height: 250px;">
+      <canvas id="intakeChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const ctx = document.getElementById('intakeChart');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: [{{range .RollupStats}}'{{.ProgramID}}',{{end}}],
+            datasets: [
+              {
+                label: 'Approved Intake',
+                data: [{{range .RollupStats}}{{.RegularLimit}},{{end}}],
+                backgroundColor: 'rgba(30, 58, 138, 0.7)'
+              },
+              {
+                label: 'Accepted Regular',
+                data: [{{range .RollupStats}}{{.TotalEnrolled}},{{end}}],
+                backgroundColor: 'rgba(16, 185, 129, 0.7)'
+              },
+              {
+                label: 'Held (V5 Overflow)',
+                data: [{{range .RollupStats}}{{.HeldCount}},{{end}}],
+                backgroundColor: 'rgba(239, 68, 68, 0.7)'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+    });
+  </script>
+  {{else}}
+    <p style="color: var(--text-muted); font-size: 0.9rem;">No approved programmes or enrolment records found for this institution.</p>
+  {{end}}
+</div>
+
+<!-- Flag Review Management Section (Dev C Requirement #3) -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+      <h3 class="card-title" style="margin-bottom: 0.2rem;">Institutional Flag Review &amp; Actions</h3>
+      <p class="card-subtitle" style="margin-bottom: 0;">Review flagged leads (V1-V6). Acknowledge, correct, or dispute with audit trace.</p>
+    </div>
+    <span class="badge badge-warning">Review Leads &ne; Fraud Verdicts (Rule #4)</span>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Rule</th>
+          <th>Severity</th>
+          <th>Reason &amp; Policy Version</th>
+          <th>Review Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{if .RecentFlags}}
+          {{range .RecentFlags}}
+          <tr id="flag-row-{{.ID}}">
+            <td><code>{{.RuleCode}}</code></td>
+            <td><span class="badge badge-warning">{{.Severity}}</span></td>
+            <td>
+              {{.Reason}}
+              {{if .PolicyVersion}}<br><small style="color: var(--text-muted);">Policy: {{.PolicyVersion}}</small>{{end}}
+            </td>
+            <td><span class="badge badge-info">{{.ReviewStatus}}</span></td>
+            <td>
+              <div style="display: flex; gap: 0.35rem;">
+                <form hx-post="/institution/flags/{{.ID}}/review" hx-target="#flag-row-{{.ID}}" hx-swap="outerHTML" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="{{$.CSRFToken}}">
+                  <input type="hidden" name="action" value="acknowledge">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">Acknowledge</button>
+                </form>
+                <form hx-post="/institution/flags/{{.ID}}/review" hx-target="#flag-row-{{.ID}}" hx-swap="outerHTML" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="{{$.CSRFToken}}">
+                  <input type="hidden" name="action" value="dispute">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">Dispute</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        {{else}}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No open flags currently require institutional review.
+            </td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title">Recent Upload Batches</h3>
+  <p class="card-subtitle">Every submitted row is preserved with its exact final processing outcome</p>
+
+  {{if .RecentJobs}}
+    <table>
+      <thead>
+        <tr>
+          <th>Batch ID</th>
+          <th>File</th>
+          <th>Total Rows</th>
+          <th>Status</th>
+          <th>Submitted At</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .RecentJobs}}
+          <tr>
+            <td><code>{{.ID}}</code></td>
+            <td>{{.Filename}}</td>
+            <td>{{.TotalRows}}</td>
+            <td><span class="badge badge-info">{{.Status}}</span></td>
+            <td>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+            <td>
+              <button class="btn btn-secondary btn-sm"
+                      hx-get="/institution/jobs/{{.ID}}/rows"
+                      hx-target="#upload-progress"
+                      hx-swap="innerHTML">
+                View Outcomes
+              </button>
+            </td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  {{else}}
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">No upload batches submitted yet.</p>
+  {{end}}
+</div>
+{{end}}

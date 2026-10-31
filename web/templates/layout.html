@@ -1,0 +1,48 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{block "title" .}}APAAR Student Data Verification System{{end}}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/htmx.min.js"></script>
+  <script src="/static/js/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>APAAR Verification System</h1>
+      <span class="brand-badge">AICTE Prototype</span>
+    </div>
+    <div class="user-nav">
+      {{if .User}}
+        <span class="user-badge">{{.User.Role}} | {{.User.Email}}</span>
+        <form method="POST" action="/logout" style="display:inline;">
+          <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+          <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
+        </form>
+      {{else}}
+        <a href="/login" class="btn btn-secondary btn-sm">Log in</a>
+      {{end}}
+    </div>
+  </header>
+
+  <main>
+    {{if .FlashError}}
+      <div class="alert alert-danger">{{.FlashError}}</div>
+    {{end}}
+    {{if .FlashSuccess}}
+      <div class="alert alert-success">{{.FlashSuccess}}</div>
+    {{end}}
+
+    {{template "content" .}}
+  </main>
+
+  <footer>
+    <p>AICTE Smart India Hackathon Prototype &bull; Synthetic Data Only &bull; All Identifiers &amp; Adapters Mocked</p>
+  </footer>
+</body>
+</html>
+{{end}}
+

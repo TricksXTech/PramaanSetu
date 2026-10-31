@@ -1,0 +1,144 @@
+{{define "title"}}API Key Management &bull; Institution Portal{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">Institution API Keys &amp; Automation Scopes</h2>
+      <p class="card-subtitle">Tenant: <strong>{{.Institution.Name}}</strong> (<code>{{.Institution.ID}}</code>)</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <a href="/docs/api" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        &#128196; OpenAPI Docs
+      </a>
+      <a href="/institution/dashboard" class="btn btn-secondary btn-sm">&larr; Dashboard</a>
+      <span class="badge badge-success">Tenant: {{.Institution.ID}}</span>
+    </div>
+  </div>
+
+  {{if .RawNewKey}}
+  <div style="margin-top: 1.25rem; padding: 1.25rem; background: #ecfdf5; border: 2px solid #10b981; border-radius: 6px;">
+    <h4 style="color: #047857; margin: 0 0 0.5rem 0; font-size: 1.05rem;">
+      &#10004; API Key Generated Successfully!
+    </h4>
+    <p style="color: #065f46; font-size: 0.85rem; margin: 0 0 0.75rem 0;">
+      <strong>Important:</strong> Copy this secret now. In compliance with security standards, it is hashed and will <strong>never be shown again</strong>.
+    </p>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <input type="text" readonly value="{{.RawNewKey}}" style="font-family: monospace; font-size: 1rem; padding: 0.5rem 0.75rem; background: #fff; border: 1px solid #a7f3d0; border-radius: 4px; width: 100%; max-width: 500px; font-weight: 700; color: #047857;">
+      <button class="btn btn-primary" onclick="navigator.clipboard.writeText('{{.RawNewKey}}'); alert('API Key copied to clipboard!');" style="cursor: pointer;">
+        Copy Key
+      </button>
+    </div>
+  </div>
+  {{end}}
+
+  <div style="margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+    <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Generate New Scoped API Key</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+      Select the minimum required operational scopes. API keys enforce tenant ownership in every database query.
+    </p>
+
+    <form action="/institution/api-keys" method="POST" style="display: flex; flex-direction: column; gap: 0.75rem; max-width: 600px;">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600;">
+          <input type="checkbox" name="scopes" value="uploads:write" checked> uploads:write (Submit Batches)
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600;">
+          <input type="checkbox" name="scopes" value="uploads:read" checked> uploads:read (Check Job Outcomes)
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600;">
+          <input type="checkbox" name="scopes" value="enrolments:write" checked> enrolments:write (Patch Enrolments)
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+        <div>
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Expiration:</label>
+          <select name="expiry_days" style="padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 4px;">
+            <option value="30">30 Days</option>
+            <option value="90">90 Days</option>
+            <option value="365">1 Year</option>
+            <option value="0">Never Expires</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="cursor: pointer;">
+          Generate API Key
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title">Active &amp; Historical API Keys</h3>
+  <p class="card-subtitle">Keys are stored hashed (SHA-256). Revoked keys are rejected immediately.</p>
+
+  {{if .Keys}}
+  <table>
+    <thead>
+      <tr>
+        <th>Key Prefix</th>
+        <th>Permitted Scopes</th>
+        <th>Created At</th>
+        <th>Expires At</th>
+        <th>Last Used</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Keys}}
+      <tr>
+        <td><code>{{.KeyPrefix}}...</code></td>
+        <td>
+          {{range .Scopes}}
+          <span class="badge badge-info" style="font-size: 0.75rem;">{{.}}</span>
+          {{end}}
+        </td>
+        <td>{{.CreatedAt.Format "02 Jan 2006"}}</td>
+        <td>
+          {{if .ExpiresAt}}
+            {{.ExpiresAt.Format "02 Jan 2006"}}
+          {{else}}
+            <span style="color: var(--text-muted);">Never</span>
+          {{end}}
+        </td>
+        <td>
+          {{if .LastUsedAt}}
+            {{.LastUsedAt.Format "02 Jan 15:04"}}
+          {{else}}
+            <span style="color: var(--text-muted);">Never</span>
+          {{end}}
+        </td>
+        <td>
+          {{if .RevokedAt}}
+            <span class="badge badge-danger">Revoked</span>
+          {{else}}
+            <span class="badge badge-success">&#10003; Active</span>
+          {{end}}
+        </td>
+        <td>
+          {{if not .RevokedAt}}
+          <form action="/institution/api-keys/{{.ID}}/revoke" method="POST" style="margin: 0;" onsubmit="return confirm('Revoke this API key immediately?');">
+            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+            <button type="submit" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5; font-size: 0.75rem; cursor: pointer;">
+              Revoke Key
+            </button>
+          </form>
+          {{else}}
+          <span style="font-size: 0.8rem; color: var(--text-muted);">&mdash;</span>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">No API keys generated yet.</p>
+  {{end}}
+</div>
+{{end}}

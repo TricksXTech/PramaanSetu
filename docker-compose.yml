@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: apaar_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: apaar_user
+      POSTGRES_PASSWORD: apaar_secret
+      POSTGRES_DB: apaar_verification
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apaar_user -d apaar_verification"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apaar_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://apaar_user:apaar_secret@db:5432/apaar_verification?sslmode=disable
+      PORT: "8080"
+      SESSION_SECRET: dev-secret-key-at-least-32-chars-long
+      ENVIRONMENT: development
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
+

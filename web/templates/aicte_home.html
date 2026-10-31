@@ -1,0 +1,226 @@
+{{define "title"}}AICTE Central Oversight Portal{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">AICTE Central Oversight Portal</h2>
+      <p class="card-subtitle">National Admission Reconciliation &amp; Regulatory Audit &bull; Zero Personal Data</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+      <a href="/aicte/reviews" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+        <span>&#9878;</span> Review Queue (V7/V8)
+      </a>
+      <a href="/aicte/reports" class="btn btn-secondary" style="text-decoration: none;">
+        &#128202; National Reports
+      </a>
+      <a href="/aicte/webhooks" class="btn btn-secondary" style="text-decoration: none;">
+        &#128225; Webhooks
+      </a>
+      <span class="badge badge-info">Role: AICTE Admin</span>
+      <button class="btn btn-secondary" 
+              hx-get="/aicte/audit/verify" 
+              hx-target="#audit-status-badge" 
+              hx-swap="outerHTML"
+              style="cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+        <span>&#128274;</span> Verify Chain
+      </button>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+      <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Total Enrolled</h4>
+      <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">{{.TotalEnrolled}}</div>
+      <small style="color: var(--text-muted);">Across all programmes</small>
+    </div>
+
+    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+      <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Flagged Review Leads</h4>
+      <div style="font-size: 1.8rem; font-weight: 700; color: var(--warning);">{{.TotalFlagged}}</div>
+      <small style="color: var(--text-muted);">Awaiting institution review</small>
+    </div>
+
+    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+      <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Supernumerary / NRI / FN</h4>
+      <div style="font-size: 1.8rem; font-weight: 700; color: var(--secondary);">{{.TotalSpecial}}</div>
+      <small style="color: var(--text-muted);">Separate allowance quotas</small>
+    </div>
+
+    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+      <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Tamper-Evident Audit Log</h4>
+      <div id="audit-status-badge" style="font-size: 1.1rem; font-weight: 600; color: var(--success); margin-top: 0.35rem;">
+        &#10003; Intact (SHA-256)
+      </div>
+      <small style="color: var(--text-muted);">Serialized head append</small>
+    </div>
+  </div>
+</div>
+
+{{if .IntakeAlerts}}
+<div class="card" style="border-left: 4px solid #ef4444; background: #fff5f5;">
+  <h3 style="font-size: 1.1rem; color: #b91c1c; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+    <span>&#9888;</span> Intake Limit Alerts (Rule V5 Reconciliation)
+  </h3>
+  <p style="font-size: 0.85rem; color: #7f1d1d; margin-bottom: 1rem;">
+    The following programmes have exceeded or are within 10% of approved intake capacity. Overflow rows are held pending AICTE regulatory approval.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Institution ID</th>
+        <th>State</th>
+        <th>Program Code</th>
+        <th>Academic Year</th>
+        <th>Total Enrolled</th>
+        <th>Regular Cap</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .IntakeAlerts}}
+      <tr>
+        <td><code>{{.InstitutionID}}</code></td>
+        <td>{{.State}}</td>
+        <td><strong>{{.ProgramID}}</strong></td>
+        <td>{{.AcademicYear}}</td>
+        <td><strong>{{.TotalEnrolled}}</strong></td>
+        <td>{{.RegularLimit}}</td>
+        <td>
+          {{if .IsOverIntake}}
+          <span class="badge badge-danger">EXCEEDED CAP (V5 HELD)</span>
+          {{else}}
+          <span class="badge badge-warning">NEAR CAPACITY (&ge;90%)</span>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+
+{{if .Anomalies}}
+<div class="card" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+  <h3 style="font-size: 1.1rem; color: #b45309; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+    <span>&#9888;</span> Institution Enrolment Volume Anomalies (Rule V9)
+  </h3>
+  <p style="font-size: 0.85rem; color: #92400e; margin-bottom: 1rem;">
+    Statistical evaluation of year-on-year institution admission volume against multi-year historical baselines.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Institution ID</th>
+        <th>Observed Total</th>
+        <th>Baseline Mean</th>
+        <th>Baseline StdDev</th>
+        <th>Years of History</th>
+        <th>Anomaly Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Anomalies}}
+      <tr>
+        <td><code>{{.InstitutionID}}</code></td>
+        <td><strong>{{.Observed}}</strong></td>
+        <td>{{printf "%.1f" .BaselineMean}}</td>
+        <td>{{printf "%.1f" .BaselineStdDev}}</td>
+        <td>{{.YearsOfHistory}} yrs</td>
+        <td>
+          {{if eq .Status "warning"}}
+            <span class="badge badge-warning">ANOMALY WARNING</span>
+          {{else if eq .Status "insufficient_history"}}
+            <span class="badge badge-info">INSUFFICIENT HISTORY</span>
+          {{else}}
+            <span class="badge badge-success">OK (Within baseline)</span>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+
+{{if .StateSummaries}}
+<div class="card">
+  <h3 class="card-title">State-Wise Admission Breakdown</h3>
+  <p class="card-subtitle">Geographic distribution of validated enrolments and open review flags</p>
+  <table>
+    <thead>
+      <tr>
+        <th>State / Territory</th>
+        <th>Active Programmes</th>
+        <th>Total Validated Enrolled</th>
+        <th>Flagged Review Leads</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .StateSummaries}}
+      <tr>
+        <td><strong>{{.State}}</strong></td>
+        <td>{{.ProgramCount}}</td>
+        <td><span class="badge badge-success">{{.TotalEnrolled}}</span></td>
+        <td><span class="badge badge-warning">{{.FlaggedCount}}</span></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+
+<div class="card">
+  <h3 class="card-title">National Programme Summary (from <code>rollup_enrolment</code>)</h3>
+  <p class="card-subtitle">Aggregated figures only &bull; Zero personally identifiable information exposed</p>
+
+  {{if .ProgramSummaries}}
+  <table>
+    <thead>
+      <tr>
+        <th>Institution ID</th>
+        <th>State</th>
+        <th>Program Code</th>
+        <th>Academic Year</th>
+        <th>Enrolled</th>
+        <th>Cap</th>
+        <th>Supernumerary</th>
+        <th>NRI / OCI / FN</th>
+        <th>Flagged Leads</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .ProgramSummaries}}
+      <tr>
+        <td><code>{{.InstitutionID}}</code></td>
+        <td>{{.State}}</td>
+        <td><strong>{{.ProgramID}}</strong></td>
+        <td>{{.AcademicYear}}</td>
+        <td>
+          {{if .IsOverIntake}}
+          <span class="badge badge-danger">{{.TotalEnrolled}}</span>
+          {{else if .IsNearIntake}}
+          <span class="badge badge-warning">{{.TotalEnrolled}}</span>
+          {{else}}
+          <span class="badge badge-success">{{.TotalEnrolled}}</span>
+          {{end}}
+        </td>
+        <td>{{if gt .RegularLimit 0}}{{.RegularLimit}}{{else}}N/A{{end}}</td>
+        <td>{{.Supernumerary}}</td>
+        <td>{{.SpecialCount}}</td>
+        <td>
+          {{if gt .FlaggedCount 0}}
+          <span class="badge badge-warning">{{.FlaggedCount}}</span>
+          {{else}}
+          <span class="badge badge-success">0</span>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">No institution rollups recorded yet. Upload admission data via an institution portal.</p>
+  {{end}}
+</div>
+{{end}}

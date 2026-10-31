@@ -1,0 +1,39 @@
+{{if eq .Job.Status "completed"}}
+<div class="alert alert-success" style="margin-top: 1rem;">
+  <strong>Upload Completed!</strong> Processed {{.Job.ProcessedRows}} of {{.Job.TotalRows}} rows.
+  <div style="margin-top: 0.5rem; display: flex; gap: 1rem; font-size: 0.85rem;">
+    <span>Accepted: <strong>{{.Job.AcceptedRows}}</strong></span>
+    <span>Flagged: <strong>{{.Job.FlaggedRows}}</strong></span>
+    <span>Rejected: <strong>{{.Job.RejectedRows}}</strong></span>
+  </div>
+</div>
+
+<div id="row-outcomes-container" hx-get="/institution/jobs/{{.Job.ID}}/rows" hx-trigger="load" hx-swap="innerHTML">
+  <p style="color: var(--text-muted); font-size: 0.85rem;">Loading row outcomes...</p>
+</div>
+{{else if eq .Job.Status "failed"}}
+<div class="alert alert-danger" style="margin-top: 1rem;">
+  <strong>Upload Failed:</strong> {{.Job.ErrorSummary}}
+</div>
+{{else}}
+<div class="card" style="margin-top: 1rem; background: #f8fafc;"
+     hx-get="/institution/jobs/{{.Job.ID}}/progress"
+     hx-trigger="every 1s"
+     hx-swap="outerHTML">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+    <strong>Processing Batch: {{.Job.Filename}}</strong>
+    <span class="badge badge-warning">{{.Job.Status}}</span>
+  </div>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+    Evaluating validation rules V1-V4 &amp; staging outcomes...
+  </p>
+  <div style="background: #e2e8f0; border-radius: 9999px; height: 10px; overflow: hidden;">
+    <div style="background: var(--primary); height: 100%; width: {{.Percent}}%;"></div>
+  </div>
+  <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+    <span>Processed: {{.Job.ProcessedRows}} / {{.Job.TotalRows}} rows</span>
+    <span>{{.Percent}}%</span>
+  </div>
+</div>
+{{end}}
+

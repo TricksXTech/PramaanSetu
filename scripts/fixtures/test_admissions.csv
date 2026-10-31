@@ -1,0 +1,9 @@
+apaar_id,name,dob,gender,guardian_name,program_id,academic_year,admission_reference,category,admission_type,is_supernumerary,is_nri,oci_status,is_foreign_national,nationality
+9999123,Rahul Verma,2005-01-15,M,Ramesh Verma,BTECH-CSE,2024-25,DTU-2024-001,General,Regular,false,false,false,false,INDIAN
+100000000001,Priya Sharma,2004-08-20,F,Sunil Sharma,BTECH-CSE,2024-25,DTU-2024-002,General,Regular,false,false,false,false,INDIAN
+100000000001,Priya Sharma,2004-08-20,F,Sunil Sharma,BTECH-CSE,2024-25,DTU-2024-002,General,Regular,false,false,false,false,INDIAN
+100000000003,John Doe,2003-11-10,M,David Doe,BTECH-CSE,2024-25,DTU-2024-003,General,Regular,false,true,false,true,INDIAN
+100000000004,Vikas Gupta,2004-02-18,M,Sanjay Gupta,BTECH-CSE,2024-25,DTU-2024-004,General,Regular,false,false,false,false,INDIAN
+100000000005,Ananya Patel,2004-06-25,F,Mahesh Patel,BTECH-CSE,2024-25,DTU-2024-005,General,Regular,false,false,false,false,INDIAN
+987654321098,Arav Sharma,2004-05-15,M,Rajesh Sharma,BTECH-CSE,2024-25,DTU-2024-006,General,Regular,false,false,false,false,INDIAN
+

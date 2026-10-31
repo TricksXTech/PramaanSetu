@@ -1,0 +1,120 @@
+{{define "title"}}AICTE Regulatory Review Queue{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">AICTE Regulatory Review Queue</h2>
+      <p class="card-subtitle">Cross-Institution Concurrent Enrolments (V7) &amp; Fuzzy Identity Candidates (V8)</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="/aicte/dashboard" class="btn btn-secondary btn-sm">&larr; Back to Dashboard</a>
+      <span class="badge badge-warning">Review Leads &ne; Fraud Verdicts (Rule #4)</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.25rem; padding: 1rem; border: 1px solid #fed7aa; background: #fff7ed; border-radius: 6px;">
+    <h4 style="color: #c2410c; font-size: 0.95rem; margin-bottom: 0.25rem;">
+      &#9888; Non-negotiable Rule #4 &amp; Privacy Mandate
+    </h4>
+    <p style="color: #9a3412; font-size: 0.85rem; margin-bottom: 0;">
+      Concurrent enrolments and fuzzy candidates are review leads for human evaluation, never automatic fraud findings.
+      In compliance with privacy safeguards, list views display <strong>masked identifiers only</strong> (e.g. <code>1234****9012</code>, <code>2004-**-**</code>).
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title">Pending Regulatory Review Leads</h3>
+  <p class="card-subtitle">Select an appropriate regulatory determination with audited justification note</p>
+
+  {{if .Flags}}
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Rule</th>
+          <th>Institution</th>
+          <th>Masked Identifiers</th>
+          <th>Lead Reason &amp; Evidence</th>
+          <th>Review Determination (Audited)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Flags}}
+        <tr id="review-row-{{.ID}}">
+          <td>
+            <span class="badge {{if eq .RuleCode "V7"}}badge-warning{{else}}badge-info{{end}}" style="font-family: monospace; font-size: 0.9rem;">
+              {{.RuleCode}}
+            </span>
+          </td>
+          <td>
+            <strong>{{.InstitutionName}}</strong><br>
+            <small style="color: var(--text-muted);">{{.InstitutionID}}</small>
+          </td>
+          <td>
+            {{if .MaskedAPAAR}}
+              <div><small style="color: var(--text-muted);">APAAR:</small> <code>{{.MaskedAPAAR}}</code></div>
+            {{end}}
+            {{if .MaskedDOB}}
+              <div><small style="color: var(--text-muted);">DOB:</small> <code>{{.MaskedDOB}}</code></div>
+            {{end}}
+            {{if .CandidateScore}}
+              <div><small style="color: var(--text-muted);">Score:</small> <span class="badge badge-info">{{.CandidateScore}}</span></div>
+            {{end}}
+          </td>
+          <td style="max-width: 320px; font-size: 0.85rem;">
+            <strong>{{.Reason}}</strong>
+            {{if .OtherInstitution}}
+              <div style="margin-top: 0.25rem; font-size: 0.8rem; color: #475569;">
+                Concurrent with: <em>{{.OtherInstitution}}</em> ({{.OtherProgram}})
+              </div>
+            {{end}}
+            {{if .Candidates}}
+              <div style="margin-top: 0.25rem; font-size: 0.8rem; color: #475569;">
+                Matched Candidates:
+                <ul style="margin: 0.2rem 0 0 1rem; padding: 0;">
+                  {{range .Candidates}}
+                    <li><code>{{.candidate_apaar_masked}}</code> (Score: {{.score}})</li>
+                  {{end}}
+                </ul>
+              </div>
+            {{end}}
+          </td>
+          <td>
+            <form hx-post="/aicte/reviews/{{.ID}}/decision"
+                  hx-target="#review-row-{{.ID}}"
+                  hx-swap="outerHTML"
+                  style="display: flex; flex-direction: column; gap: 0.4rem; min-width: 240px;">
+              <input type="hidden" name="_csrf" value="{{$.CSRFToken}}">
+              
+              <select name="decision" required style="padding: 0.35rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px;">
+                <option value="">-- Select Decision --</option>
+                <option value="valid_concurrent_study">Valid Concurrent Study (e.g. Degree + Diploma)</option>
+                <option value="confirmed_same_person">Confirmed Same Person (Multiple Admission)</option>
+                <option value="confirmed_different_people">Confirmed Different People (Coincidental match)</option>
+                <option value="needs_more_information">Needs More Information (Query Institution)</option>
+                <option value="dismissed">Dismissed (False Positive / Inapplicable)</option>
+              </select>
+
+              <div style="display: flex; gap: 0.35rem;">
+                <input type="text" name="note" placeholder="Mandatory regulatory note..." required style="flex: 1; padding: 0.3rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px;">
+                <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; white-space: nowrap; cursor: pointer;">
+                  Submit Decision
+                </button>
+              </div>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+    No pending cross-institution or fuzzy identity review leads in the queue.
+  </p>
+  {{end}}
+</div>
+{{end}}
+

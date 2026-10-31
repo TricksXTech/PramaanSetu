@@ -1,0 +1,19 @@
+{
+  "policy_version": "AICTE-2024-V1",
+  "allowed_categories": ["General", "OBC", "SC", "ST", "EWS"],
+  "allowed_admission_types": ["Regular", "Lateral Entry", "Supernumerary", "Management"],
+  "min_age_years": 16,
+  "max_age_years": 40,
+  "supernumerary_allowances": {
+    "NRI": 5,
+    "OCI": 5,
+    "FN": 5,
+    "TFW": 5,
+    "DEFENCE": 2
+  },
+  "required_category_fields": {
+    "EWS": ["admission_reference"],
+    "Foreign_National": ["nationality"]
+  }
+}
+

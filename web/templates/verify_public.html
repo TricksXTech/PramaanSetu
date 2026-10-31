@@ -1,0 +1,38 @@
+{{define "title"}}Public Credential Status &bull; AICTE APAAR{{end}}
+
+{{define "content"}}
+<div style="max-width: 560px; margin: 3rem auto;">
+  <div class="card" style="text-align: center; padding: 2.5rem 1.5rem;">
+    <div style="margin-bottom: 1rem;">
+      <span class="brand-badge" style="background: #1e3a8a; color: white; padding: 0.35rem 0.75rem;">AICTE Verifiable Credential Service</span>
+    </div>
+
+    <h2 class="card-title" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Credential Status Check</h2>
+    <p class="card-subtitle" style="font-size: 0.85rem; margin-bottom: 2rem;">
+      Privacy Notice: Public QR verification does not disclose student identity, APAAR ID, or academic profile.
+    </p>
+
+    <div style="margin: 2rem 0; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); background: #fafafa;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em;">Status</div>
+      {{if eq .Status "active"}}
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--success);">&#10003; Attested &amp; Current</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Digital signature valid under AICTE master key.</p>
+      {{else if eq .Status "revoked"}}
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--danger);">&#10007; Credential Revoked</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">This credential has been explicitly revoked by the issuer.</p>
+      {{else if eq .Status "expired"}}
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--warning);">&#9888; Credential Expired</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Validity window has passed.</p>
+      {{else}}
+        <div style="font-size: 1.4rem; font-weight: 700; color: #64748b;">&#9675; Credential Not Found</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">No matching attested credential record found.</p>
+      {{end}}
+    </div>
+
+    <div style="font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 1rem;">
+      To access student academic records, authenticated verifiers must request explicit consent via the Verifier Portal.
+    </div>
+  </div>
+</div>
+{{end}}
+

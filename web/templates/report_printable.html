@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Regulatory Aggregation Report &bull; AICTE</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 1.5cm;
+      color: #0f172a;
+      background: #fff;
+    }
+    .header {
+      border-bottom: 2px solid #1e3a8a;
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .header h1 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1.4rem;
+      color: #1e3a8a;
+    }
+    .header p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .meta-box {
+      font-size: 0.8rem;
+      text-align: right;
+      color: #475569;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 0.5rem 0.6rem;
+      text-align: left;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .total-row {
+      font-weight: 700;
+      background: #e2e8f0 !important;
+    }
+    .footer {
+      margin-top: 2rem;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .no-print {
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { padding: 0; }
+      @page { size: A4 landscape; margin: 1.5cm; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print">
+    <button class="btn" onclick="window.print()" style="background: #1e3a8a; color: #fff; border: none;">&#128424; Print Report</button>
+    <button class="btn" onclick="window.history.back()" style="background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1;">&larr; Back</button>
+  </div>
+
+  <div class="header">
+    <div>
+      <h1>AICTE Regulatory Aggregation Report</h1>
+      <p>Report: <strong>{{.ReportTitle}}</strong> &bull; Aggregated figures only &bull; Zero Personal Data</p>
+    </div>
+    <div class="meta-box">
+      <div>Scope: <strong>{{.Spec.Scope}}</strong></div>
+      <div>Academic Year: <strong>{{.Spec.AcademicYear}}</strong></div>
+      <div>Policy Version: <strong>{{.Spec.PolicyVersion}}</strong></div>
+      <div>Generated At: <strong>{{.Spec.GeneratedAt.Format "02 Jan 2006 15:04:05 UTC"}}</strong></div>
+    </div>
+  </div>
+
+  {{if .IntakeReport}}
+  <table>
+    <thead>
+      <tr>
+        <th>Institution ID</th>
+        <th>Institution Name</th>
+        <th>Program Code</th>
+        <th>Academic Year</th>
+        <th>Approved Intake</th>
+        <th>Accepted Regular</th>
+        <th>Supernumerary</th>
+        <th>NRI</th>
+        <th>OCI</th>
+        <th>FN</th>
+        <th>Held (Cap Overflow)</th>
+        <th>Variance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .IntakeReport.Rows}}
+      <tr>
+        <td><code>{{.InstitutionID}}</code></td>
+        <td>{{.InstitutionName}}</td>
+        <td><strong>{{.ProgramID}}</strong></td>
+        <td>{{.AcademicYear}}</td>
+        <td>{{.RegularLimit}}</td>
+        <td><strong>{{.AcceptedRegular}}</strong></td>
+        <td>{{.Supernumerary}}</td>
+        <td>{{.NRI}}</td>
+        <td>{{.OCI}}</td>
+        <td>{{.FN}}</td>
+        <td>{{.HeldCount}}</td>
+        <td style="color: {{if lt .Variance 0}}#b45309{{else if gt .Variance 0}}#b91c1c{{else}}#15803d{{end}};">
+          {{if gt .Variance 0}}+{{end}}{{.Variance}}
+        </td>
+      </tr>
+      {{end}}
+      <tr class="total-row">
+        <td colspan="4">AGGREGATE TOTAL</td>
+        <td>{{.IntakeReport.Total.RegularLimit}}</td>
+        <td>{{.IntakeReport.Total.AcceptedRegular}}</td>
+        <td>{{.IntakeReport.Total.Supernumerary}}</td>
+        <td>{{.IntakeReport.Total.NRI}}</td>
+        <td>{{.IntakeReport.Total.OCI}}</td>
+        <td>{{.IntakeReport.Total.FN}}</td>
+        <td>{{.IntakeReport.Total.HeldCount}}</td>
+        <td>{{if gt .IntakeReport.Total.Variance 0}}+{{end}}{{.IntakeReport.Total.Variance}}</td>
+      </tr>
+    </tbody>
+  </table>
+  {{end}}
+
+  {{if .CategoryReport}}
+  <table>
+    <thead>
+      <tr>
+        <th>Institution ID</th>
+        <th>Institution Name</th>
+        <th>Program Code</th>
+        <th>Academic Year</th>
+        <th>Category</th>
+        <th>Enrolled Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .CategoryReport.Rows}}
+      <tr>
+        <td><code>{{.InstitutionID}}</code></td>
+        <td>{{.InstitutionName}}</td>
+        <td><strong>{{.ProgramID}}</strong></td>
+        <td>{{.AcademicYear}}</td>
+        <td>{{.Category}}</td>
+        <td><strong>{{.EnrolledCount}}</strong></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+
+  {{if .FlaggedReport}}
+  <table>
+    <thead>
+      <tr>
+        <th>Institution ID</th>
+        <th>Institution Name</th>
+        <th>Rule Code</th>
+        <th>Severity</th>
+        <th>Review Status</th>
+        <th>Total Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .FlaggedReport.Rows}}
+      <tr>
+        <td><code>{{.InstitutionID}}</code></td>
+        <td>{{.InstitutionName}}</td>
+        <td><strong>{{.RuleCode}}</strong></td>
+        <td>{{.Severity}}</td>
+        <td>{{.ReviewStatus}}</td>
+        <td><strong>{{.Count}}</strong></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+
+  <div class="footer">
+    <span>Synthetic demo data &bull; Smart India Hackathon Prototype</span>
+    <span>Generated by: {{.Spec.GeneratedBy}}</span>
+  </div>
+
+</body>
+</html>

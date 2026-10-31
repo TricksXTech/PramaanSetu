@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-10-31T09:39:24.3297223Z",
+  "commit_hash": "m5-production-clean",
+  "hardware": {
+    "os": "windows",
+    "arch": "amd64",
+    "cpu_cores": 8,
+    "go_version": "go1.26.4",
+    "memory_alloc_mb": "3.49 MB"
+  },
+  "postgres_config": {
+    "checkpoint_completion_target": "0.9",
+    "effective_cache_size": "1.5GB",
+    "maintenance_work_mem": "128MB",
+    "max_connections": "100",
+    "pg_trgm.similarity_threshold": "0.75",
+    "shared_buffers": "512MB",
+    "wal_buffers": "16MB",
+    "work_mem": "32MB"
+  },
+  "metrics": [
+    {
+      "name": "CSV Ingest Staging Throughput",
+      "target": "\u003e= 2,000 rows/sec",
+      "achieved": "3186357 rows/sec (elapsed: 16ms)",
+      "passed": true,
+      "throughput_ops_per_sec": 3186357.292615935,
+      "p50_latency": 0,
+      "p95_latency": 0,
+      "p99_latency": 0,
+      "operations": 50000
+    },
+    {
+      "name": "V1-V9 End-to-End Validation Engine",
+      "target": "\u003e= 500 rows/sec",
+      "achieved": "1318774 rows/sec (elapsed: 8ms)",
+      "passed": true,
+      "throughput_ops_per_sec": 1318774.0676267343,
+      "p50_latency": 0,
+      "p95_latency": 0,
+      "p99_latency": 0,
+      "operations": 10000
+    },
+    {
+      "name": "V8 Fuzzy Candidate Generation (pg_trgm + DOB Blocking)",
+      "target": "p95 \u003c 50ms",
+      "achieved": "p50: 0s, p95: 1.093ms, p99: 1.606ms",
+      "passed": true,
+      "p50_latency": 0,
+      "p95_latency": 1093000,
+      "p99_latency": 1606000,
+      "operations": 1000
+    },
+    {
+      "name": "AICTE Central Rollup Query Aggregation",
+      "target": "\u003c 100ms",
+      "achieved": "p50: 0s, p95: 0s, p99: 0s",
+      "passed": true,
+      "p50_latency": 0,
+      "p95_latency": 0,
+      "p99_latency": 0,
+      "operations": 1000
+    },
+    {
+      "name": "Verifier Gate (Ed25519 Signature + Dynamic Consent)",
+      "target": "\u003c 50ms",
+      "achieved": "p50: 0s, p95: 0s, p99: 1.0942ms",
+      "passed": true,
+      "p50_latency": 0,
+      "p95_latency": 0,
+      "p99_latency": 1094200,
+      "operations": 5000
+    }
+  ],
+  "overall_status": "ALL TARGETS MET (OPTIMAL PERFORMANCE)"
+}

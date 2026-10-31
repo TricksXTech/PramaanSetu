@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifiable Academic Credential Certificate &bull; APAAR</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --border: #cbd5e1;
+      --text: #0f172a;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #f1f5f9;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .cert-container {
+      width: 100%;
+      max-width: 800px;
+      background: #ffffff;
+      border: 3px double var(--primary);
+      border-radius: 8px;
+      padding: 2.5rem 3rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+    .cert-header {
+      text-align: center;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .cert-header h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.75rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .cert-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #475569;
+    }
+    .cert-body {
+      line-height: 1.6;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+      padding: 1.25rem;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .field-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 0.2rem;
+    }
+    .field-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-active { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .badge-revoked { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-expired { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+    .badge-superseded { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    .cert-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .qr-box {
+      text-align: center;
+    }
+    .qr-box img {
+      width: 120px;
+      height: 120px;
+      border: 1px solid var(--border);
+      padding: 4px;
+      background: #fff;
+    }
+    .verify-url {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.35rem;
+      word-break: break-all;
+      max-width: 180px;
+    }
+    .actions {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-print { background: var(--primary); color: #fff; border: none; }
+    .btn-back { background: #e2e8f0; color: #334155; border: 1px solid var(--border); }
+
+    /* Clean Print CSS - Zero navigation, zero buttons, A4 margin */
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .actions, .no-print {
+        display: none !important;
+      }
+      .cert-container {
+        border: 2px solid #000;
+        box-shadow: none;
+        max-width: 100%;
+        padding: 2cm;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 1cm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="actions no-print">
+    <button class="btn btn-print" onclick="window.print()">&#128424; Print Credential Certificate</button>
+    <button class="btn btn-back" onclick="window.history.back()">&larr; Back</button>
+  </div>
+
+  <div class="cert-container" style="margin-top: 1.5rem;">
+    <div class="cert-header">
+      <h1>AICTE Verifiable Academic Credential</h1>
+      <h2>{{.Cert.InstitutionName}}</h2>
+    </div>
+
+    <div class="cert-body">
+      <p style="text-align: center; font-size: 1.05rem; margin-bottom: 1.5rem;">
+        This document certifies that the following academic enrolment record has been validated and institution-attested under the National APAAR Student Data Verification Framework.
+      </p>
+
+      <div class="field-grid">
+        <div>
+          <div class="field-label">Student Full Name</div>
+          <div class="field-value">{{.Cert.StudentName}}</div>
+        </div>
+
+        <div>
+          <div class="field-label">Institutional Student ID</div>
+          <div class="field-value"><code>{{.Cert.AdmissionReference}}</code></div>
+        </div>
+
+        <div>
+          <div class="field-label">APAAR ID (National Identifier)</div>
+          <div class="field-value"><code style="color: var(--primary); font-size: 1.15rem;">{{.Cert.APAARID}}</code></div>
+        </div>
+
+        <div>
+          <div class="field-label">Attested Academic Programme</div>
+          <div class="field-value">{{.Cert.ProgramName}} ({{.Cert.ProgramCode}})</div>
+        </div>
+
+        <div>
+          <div class="field-label">Academic Admission Year</div>
+          <div class="field-value">{{.Cert.AcademicYear}}</div>
+        </div>
+
+        <div>
+          <div class="field-label">Issuing Institution</div>
+          <div class="field-value">{{.Cert.InstitutionName}} (<code>{{.Cert.InstitutionID}}</code>)</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f1f5f9; border-radius: 6px;">
+        <div>
+          <span style="font-size: 0.85rem; color: #475569;">Live Verification Status:</span>
+          {{if eq .Cert.CredentialStatus "active"}}
+            <span class="badge badge-active">&#10003; Active &amp; Valid</span>
+          {{else if eq .Cert.CredentialStatus "revoked"}}
+            <span class="badge badge-revoked">&#10007; Revoked</span>
+          {{else if eq .Cert.CredentialStatus "expired"}}
+            <span class="badge badge-expired">&#9888; Expired</span>
+          {{else if eq .Cert.CredentialStatus "superseded"}}
+            <span class="badge badge-superseded">&#8635; Superseded</span>
+          {{else}}
+            <span class="badge badge-active">{{.Cert.CredentialStatus}}</span>
+          {{end}}
+        </div>
+        <div style="font-size: 0.85rem; color: #64748b;">
+          Issued on: <strong>{{.Cert.IssuedAt.Format "02 Jan 2006"}}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="cert-footer">
+      <div>
+        <p style="margin: 0 0 0.25rem 0; font-size: 0.85rem; font-weight: 600; color: #1e293b;">Cryptographic Attestation</p>
+        <p style="margin: 0; font-size: 0.75rem; color: #64748b; max-width: 450px;">
+          Signed using institution Ed25519 digital signature. Scanning the opaque QR code displays public credential validity without disclosing personal data.
+        </p>
+      </div>
+
+      <div class="qr-box">
+        <img src="/credentials/{{.Cert.CredentialID}}/qr.png" alt="Opaque Verification QR Code">
+        <div class="verify-url">
+          Verify at:<br>
+          <a href="/verify/{{.Cert.OpaqueID}}" style="color: var(--primary); text-decoration: none;">
+            verify/{{.Cert.OpaqueID}}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

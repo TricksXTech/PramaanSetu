@@ -1,0 +1,272 @@
+openapi: 3.0.3
+info:
+  title: APAAR Student Data Verification System API
+  description: |
+    Production API specification for AICTE and educational institutions.
+    Implements tenant-scoped batch admission upload with idempotency,
+    optimistic-concurrency enrolment patching, and consent-gated verifiable credential verification.
+  version: 0.5.0-milestone5
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Hackathon Prototype Environment
+
+paths:
+  /uploads:
+    post:
+      summary: Upload Admission Batch (CSV)
+      description: |
+        Uploads institution admission rosters keyed by APAAR ID.
+        Requires institution-scoped API key with scope `uploads:write` and an `Idempotency-Key` header (Rule #10).
+      operationId: uploadAdmissionBatch
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            example: "idem-2024-oct-dtu-001"
+          description: Unique client key for replay prevention and deduplication.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Admission CSV roster file (UTF-8, max 10MB).
+      responses:
+        '202':
+          description: Batch accepted and queued for validation processing.
+          content:
+            application/json:
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                institution_id: "INST-AICTE-001"
+                filename: "dtu_admissions_2024.csv"
+                status: "processing"
+                total_rows: 50
+                idempotency_key: "idem-2024-oct-dtu-001"
+        '400':
+          description: Missing file or Idempotency-Key header.
+          content:
+            application/json:
+              example:
+                error: "Bad Request"
+                message: "Idempotency-Key header is required for API uploads (Rule #10)"
+        '401':
+          description: Invalid, expired or revoked API key.
+          content:
+            application/json:
+              example:
+                error: "Unauthorized"
+                message: "Invalid or revoked API key"
+        '403':
+          description: API key lacks uploads:write scope.
+          content:
+            application/json:
+              example:
+                error: "Forbidden"
+                message: "insufficient API key scope for requested operation"
+        '429':
+          description: Rate limit exceeded.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                example: 60
+          content:
+            application/json:
+              example:
+                error: "Too Many Requests"
+                message: "API rate limit exceeded. Please back off."
+                retry_after: 60
+
+  /uploads/{id}:
+    get:
+      summary: Get Upload Job Status & Outcomes
+      description: |
+        Retrieves job processing status, aggregate outcome counts, and per-row outcomes.
+        Enforces tenant ownership in query (Non-negotiable Rule #2).
+      operationId: getUploadStatus
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+          description: The upload job UUID.
+      responses:
+        '200':
+          description: Job status and row outcomes.
+          content:
+            application/json:
+              example:
+                job:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  institution_id: "INST-AICTE-001"
+                  filename: "dtu_admissions_2024.csv"
+                  total_rows: 2
+                  processed_rows: 2
+                  accepted_rows: 1
+                  flagged_rows: 1
+                  rejected_rows: 0
+                  status: "completed"
+                  idempotency_key: "idem-2024-oct-dtu-001"
+                  created_at: "2024-10-31T10:00:00Z"
+                rows:
+                  - row_number: 1
+                    outcome: "accepted"
+                  - row_number: 2
+                    outcome: "flagged_held"
+                    rule_code: "V5"
+                    reason: "Intake capacity exceeded approved regular limit"
+        '401':
+          description: Invalid or revoked API key.
+        '403':
+          description: Tenant isolation failure (job belongs to another institution).
+          content:
+            application/json:
+              example:
+                error: "Forbidden"
+                message: "Access denied: job belongs to another tenant"
+        '404':
+          description: Job ID not found.
+
+  /enrolments/{id}:
+    patch:
+      summary: Patch Enrolment Record (Optimistic Concurrency)
+      description: |
+        Updates an existing enrolment. Requires `expected_version` for optimistic concurrency.
+        Attempts to overwrite shared identity fields (APAAR ID, name, DOB) are strictly rejected (Rule #1).
+      operationId: patchEnrolment
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              expected_version: 1
+              category: "OBC"
+              admission_type: "Regular"
+      responses:
+        '200':
+          description: Enrolment updated and version incremented.
+          content:
+            application/json:
+              example:
+                id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+                version: 2
+                status: "submitted"
+        '400':
+          description: Identity field modification attempted or missing expected_version.
+          content:
+            application/json:
+              example:
+                error: "Forbidden Field"
+                message: "Identity fields cannot be modified via enrolment patch; separate identity-correction review required"
+        '403':
+          description: Access denied (enrolment belongs to another tenant).
+        '409':
+          description: Stale version conflict (optimistic lock failure).
+          content:
+            application/json:
+              example:
+                error: "Conflict"
+                message: "Stale version: enrolment has been modified concurrently"
+                current_version: 2
+                expected_version: 1
+
+  /credentials/{id}/verify:
+    get:
+      summary: Verify Student Credential (Consent-Gated)
+      description: |
+        Verifies credential digital signature, current attestation, and evaluates dynamic student consent.
+        Without active consent, returns 6 verification states with ZERO student personal data.
+      operationId: verifyCredential
+      security:
+        - ApiKeyAuth: []
+        - VerifierHeaderAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "e58ed763-928c-4155-bee9-fdbaaadc15f3"
+      responses:
+        '200':
+          description: Verification response.
+          content:
+            application/json:
+              examples:
+                ConsentActive:
+                  summary: Verified with active student consent
+                  value:
+                    credential_id: "e58ed763-928c-4155-bee9-fdbaaadc15f3"
+                    opaque_id: "opq_3f789d21c324a"
+                    format_valid: true
+                    registry_matched: true
+                    registry_provenance: "mock"
+                    rules_passed: true
+                    institution_attested: true
+                    signature_valid: true
+                    credential_current: true
+                    status: "verified"
+                    consent_active: true
+                    consent_required: false
+                    key_id: "key_aicte_2024_01"
+                    permitted_fields:
+                      name: "Rohan Gupta"
+                      program_code: "BTECH-CSE"
+                      academic_year: "2024-25"
+                      status: "attested"
+                ConsentRequired:
+                  summary: Verified without active student consent (Zero PII)
+                  value:
+                    credential_id: "e58ed763-928c-4155-bee9-fdbaaadc15f3"
+                    opaque_id: "opq_3f789d21c324a"
+                    format_valid: true
+                    registry_matched: true
+                    registry_provenance: "mock"
+                    rules_passed: true
+                    institution_attested: true
+                    signature_valid: true
+                    credential_current: true
+                    status: "consent_required"
+                    consent_active: false
+                    consent_required: true
+                    key_id: "key_aicte_2024_01"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Scoped API Key hash token
+    VerifierHeaderAuth:
+      type: apiKey
+      in: header
+      name: X-Verifier-ID
+      description: Authenticated Verifier UUID

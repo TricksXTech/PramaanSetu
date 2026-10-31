@@ -1,0 +1,170 @@
+{{define "title"}}National Reports &bull; AICTE Portal{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">National Aggregated Regulatory Reports</h2>
+      <p class="card-subtitle">Aggregates only &bull; Zero Personally Identifiable Information &bull; Excel-Safe Exports</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="/aicte/dashboard" class="btn btn-secondary btn-sm">&larr; AICTE Dashboard</a>
+    </div>
+  </div>
+
+  <form method="GET" action="/aicte/reports" style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+    <div>
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Report Type</label>
+      <select name="type" style="padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: 4px;">
+        <option value="intake_vs_enrolment" {{if eq .SelectedType "intake_vs_enrolment"}}selected{{end}}>Intake vs. Enrolment (National Reconciliation)</option>
+        <option value="category_breakdown" {{if eq .SelectedType "category_breakdown"}}selected{{end}}>Social Category Breakdown</option>
+        <option value="flagged_summary" {{if eq .SelectedType "flagged_summary"}}selected{{end}}>Validation Flags Summary</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Academic Year</label>
+      <select name="year" style="padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: 4px;">
+        <option value="2024-25" {{if eq .SelectedYear "2024-25"}}selected{{end}}>2024-25</option>
+        <option value="2023-24" {{if eq .SelectedYear "2023-24"}}selected{{end}}>2023-24</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="cursor: pointer;">
+      Preview National Report
+    </button>
+
+    {{if .HasData}}
+    <a href="/aicte/reports/csv?type={{.SelectedType}}&year={{.SelectedYear}}" class="btn btn-secondary" style="text-decoration: none;">
+      &DownArrow; Download CSV (Formula Safe)
+    </a>
+    <a href="/reports/printable?type={{.SelectedType}}&year={{.SelectedYear}}" target="_blank" class="btn btn-secondary" style="text-decoration: none;">
+      &#128424; Printable View
+    </a>
+    {{end}}
+  </form>
+</div>
+
+{{if .IntakeReport}}
+<div class="card">
+  <h3 class="card-title">National Intake Reconciliation Preview</h3>
+  <p class="card-subtitle">Policy: <code>{{.IntakeReport.Spec.PolicyVersion}}</code> &bull; Generated: {{.IntakeReport.Spec.GeneratedAt.Format "02 Jan 2006 15:04:05 UTC"}}</p>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Institution ID</th>
+          <th>Institution Name</th>
+          <th>Program</th>
+          <th>Cap</th>
+          <th>Accepted Regular</th>
+          <th>Supernumerary</th>
+          <th>NRI</th>
+          <th>OCI</th>
+          <th>FN</th>
+          <th>Held (V5 Overflow)</th>
+          <th>Variance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .IntakeReport.Rows}}
+        <tr>
+          <td><code>{{.InstitutionID}}</code></td>
+          <td>{{.InstitutionName}}</td>
+          <td><strong>{{.ProgramID}}</strong></td>
+          <td>{{.RegularLimit}}</td>
+          <td><span class="badge badge-success">{{.AcceptedRegular}}</span></td>
+          <td>{{.Supernumerary}}</td>
+          <td>{{.NRI}}</td>
+          <td>{{.OCI}}</td>
+          <td>{{.FN}}</td>
+          <td>{{.HeldCount}}</td>
+          <td>{{if gt .Variance 0}}+{{end}}{{.Variance}}</td>
+        </tr>
+        {{end}}
+        <tr style="font-weight: 700; background: #f8fafc;">
+          <td colspan="3">NATIONAL AGGREGATE TOTAL</td>
+          <td>{{.IntakeReport.Total.RegularLimit}}</td>
+          <td>{{.IntakeReport.Total.AcceptedRegular}}</td>
+          <td>{{.IntakeReport.Total.Supernumerary}}</td>
+          <td>{{.IntakeReport.Total.NRI}}</td>
+          <td>{{.IntakeReport.Total.OCI}}</td>
+          <td>{{.IntakeReport.Total.FN}}</td>
+          <td>{{.IntakeReport.Total.HeldCount}}</td>
+          <td>{{if gt .IntakeReport.Total.Variance 0}}+{{end}}{{.IntakeReport.Total.Variance}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{if .CategoryReport}}
+<div class="card">
+  <h3 class="card-title">National Social Category Breakdown Preview</h3>
+  <p class="card-subtitle">Policy: <code>{{.CategoryReport.Spec.PolicyVersion}}</code> &bull; Academic Year: {{.CategoryReport.Spec.AcademicYear}}</p>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Institution ID</th>
+          <th>Institution Name</th>
+          <th>Program</th>
+          <th>Academic Year</th>
+          <th>Category</th>
+          <th>Enrolled Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .CategoryReport.Rows}}
+        <tr>
+          <td><code>{{.InstitutionID}}</code></td>
+          <td>{{.InstitutionName}}</td>
+          <td><strong>{{.ProgramID}}</strong></td>
+          <td>{{.AcademicYear}}</td>
+          <td><span class="badge badge-info">{{.Category}}</span></td>
+          <td><strong>{{.EnrolledCount}}</strong></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{if .FlaggedReport}}
+<div class="card">
+  <h3 class="card-title">National Validation Flags Summary Preview</h3>
+  <p class="card-subtitle">Aggregated flags by institution, rule code and review status</p>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Institution ID</th>
+          <th>Institution Name</th>
+          <th>Rule Code</th>
+          <th>Severity</th>
+          <th>Review Status</th>
+          <th>Total Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .FlaggedReport.Rows}}
+        <tr>
+          <td><code>{{.InstitutionID}}</code></td>
+          <td>{{.InstitutionName}}</td>
+          <td><span class="badge badge-warning" style="font-family: monospace;">{{.RuleCode}}</span></td>
+          <td><span class="badge badge-info">{{.Severity}}</span></td>
+          <td><span class="badge {{if eq .ReviewStatus "resolved"}}badge-success{{else}}badge-danger{{end}}">{{.ReviewStatus}}</span></td>
+          <td><strong>{{.Count}}</strong></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+{{end}}

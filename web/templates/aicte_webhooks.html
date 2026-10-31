@@ -1,0 +1,77 @@
+{{define "title"}}Webhook Deliveries &bull; AICTE Portal{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">Regulatory Flag Webhooks &amp; Receiver Monitor</h2>
+      <p class="card-subtitle">HMAC-SHA256 Signed Outbound Flag Events &bull; River Retries &bull; Fixed Demo Receiver</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="/aicte/dashboard" class="btn btn-secondary btn-sm">&larr; Dashboard</a>
+    </div>
+  </div>
+
+  <div style="margin-top: 1rem; padding: 1rem; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px;">
+    <h4 style="color: #3730a3; font-size: 0.95rem; margin-bottom: 0.25rem;">
+      &#128225; Signed Webhook Security Specification (Section 11)
+    </h4>
+    <p style="color: #4338ca; font-size: 0.85rem; margin: 0;">
+      Flag creation events enqueue a River worker that signs the payload with HMAC-SHA256 (`X-Signature`), includes an `X-Event-Id` for deduplication, and enforces a 5-minute `X-Event-Timestamp` replay tolerance window. The payload contains only non-PII identifiers.
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+      <h3 class="card-title" style="margin: 0;">Recent Demo Webhook Receiver Invocations</h3>
+      <p class="card-subtitle" style="margin: 0;">In-memory delivery queue from local <code>/demo/webhook-receiver</code></p>
+    </div>
+    <form action="/demo/webhook-test" method="POST" style="margin: 0; display: flex; gap: 0.5rem;">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+      <button type="submit" name="force_failure" value="false" class="btn btn-primary btn-sm" style="cursor: pointer;">
+        Trigger Test Event (Success)
+      </button>
+      <button type="submit" name="force_failure" value="true" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5; cursor: pointer;">
+        Trigger Failing Event (Retry Demo)
+      </button>
+    </form>
+  </div>
+
+  {{if .RecentEvents}}
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Event ID</th>
+          <th>Type</th>
+          <th>Institution</th>
+          <th>Flagged Rule</th>
+          <th>Severity</th>
+          <th>Received At</th>
+          <th>Delivery State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .RecentEvents}}
+        <tr>
+          <td><code>{{.EventID}}</code></td>
+          <td><strong>{{.EventType}}</strong></td>
+          <td><code>{{.InstitutionID}}</code></td>
+          <td><span class="badge badge-warning" style="font-family: monospace;">{{.RuleCode}}</span></td>
+          <td><span class="badge badge-info">{{.Severity}}</span></td>
+          <td>{{.OccurredAt.Format "02 Jan 15:04:05 UTC"}}</td>
+          <td><span class="badge badge-success">&#10003; HMAC Verified</span></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+    No webhook events received yet. Click "Trigger Test Event" above to dispatch a signed flag event.
+  </p>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,108 @@
+<div class="card" style="margin-top: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h3 class="card-title" style="margin-bottom: 0.2rem;">Row Processing Outcomes</h3>
+      <p class="card-subtitle" style="margin-bottom: 0;">Preserved results for upload batch <code>{{.JobID}}</code></p>
+    </div>
+
+    <!-- Filter Controls using HTMX swaps -->
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <select name="outcome_filter" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.85rem;"
+              hx-get="/institution/jobs/{{.JobID}}/rows"
+              hx-target="#row-outcomes-container"
+              hx-include="[name='rule_filter']">
+        <option value="" {{if eq .SelectedOutcome ""}}selected{{end}}>All Outcomes</option>
+        <option value="accepted" {{if eq .SelectedOutcome "accepted"}}selected{{end}}>Accepted</option>
+        <option value="flagged_held" {{if eq .SelectedOutcome "flagged_held"}}selected{{end}}>Flagged (Held)</option>
+        <option value="no_op_identical" {{if eq .SelectedOutcome "no_op_identical"}}selected{{end}}>No-op (Identical)</option>
+        <option value="rejected_invalid" {{if eq .SelectedOutcome "rejected_invalid"}}selected{{end}}>Rejected (Invalid)</option>
+        <option value="rejected_parse" {{if eq .SelectedOutcome "rejected_parse"}}selected{{end}}>Rejected (Parse)</option>
+        <option value="pending_registry" {{if eq .SelectedOutcome "pending_registry"}}selected{{end}}>Pending Registry</option>
+        <option value="conflict_stale" {{if eq .SelectedOutcome "conflict_stale"}}selected{{end}}>Conflict (Stale)</option>
+      </select>
+
+      <select name="rule_filter" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.85rem;"
+              hx-get="/institution/jobs/{{.JobID}}/rows"
+              hx-target="#row-outcomes-container"
+              hx-include="[name='outcome_filter']">
+        <option value="" {{if eq .SelectedRule ""}}selected{{end}}>All Rules</option>
+        <option value="V1" {{if eq .SelectedRule "V1"}}selected{{end}}>V1 (Malformed APAAR)</option>
+        <option value="V2" {{if eq .SelectedRule "V2"}}selected{{end}}>V2 (Registry Status)</option>
+        <option value="V3" {{if eq .SelectedRule "V3"}}selected{{end}}>V3 (File Duplicate)</option>
+        <option value="V4" {{if eq .SelectedRule "V4"}}selected{{end}}>V4 (DB Enrolment)</option>
+        <option value="V5" {{if eq .SelectedRule "V5"}}selected{{end}}>V5 (Intake Cap Overflow)</option>
+        <option value="V6" {{if eq .SelectedRule "V6"}}selected{{end}}>V6 (Policy Inconsistency)</option>
+        <option value="V8" {{if eq .SelectedRule "V8"}}selected{{end}}>V8 (Identity Difference)</option>
+      </select>
+    </div>
+  </div>
+
+  {{if .Rows}}
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 80px;">Row #</th>
+          <th style="width: 140px;">Outcome</th>
+          <th style="width: 100px;">Rule</th>
+          <th>Explanation / Review Reason</th>
+          <th style="width: 120px;">Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td><strong>#{{.RowNumber}}</strong></td>
+          <td>
+            {{if eq .Outcome "accepted"}}
+              <span class="badge badge-success">accepted</span>
+            {{else if eq .Outcome "no_op_identical"}}
+              <span class="badge" style="background:#e0f2fe; color:#0369a1;">no-op identical</span>
+            {{else if eq .Outcome "pending_registry"}}
+              <span class="badge" style="background:#fef3c7; color:#92400e;">pending registry (mock)</span>
+            {{else if eq .Outcome "flagged_held"}}
+              <span class="badge badge-warning">flagged held</span>
+            {{else if eq .Outcome "conflict_stale"}}
+              <span class="badge" style="background:#fee2e2; color:#b91c1c;">conflict stale</span>
+            {{else}}
+              <span class="badge" style="background:#fecaca; color:#991b1b;">{{.Outcome}}</span>
+            {{end}}
+          </td>
+          <td>
+            {{if .RuleCode}}
+              <span style="font-weight: 700; font-family: monospace;">{{.RuleCode}}</span>
+            {{else}}
+              <span style="color: var(--text-muted);">&mdash;</span>
+            {{end}}
+          </td>
+          <td style="font-size: 0.85rem;">
+            {{if .Reason}}
+              {{.Reason}}
+            {{else if eq .Outcome "accepted"}}
+              <span style="color: var(--success);">&check; Validated and promoted to enrolments</span>
+            {{else if eq .Outcome "no_op_identical"}}
+              <span style="color: var(--text-muted);">&bull; Identical record already exists; re-upload creates no extra enrolment</span>
+            {{else}}
+              <span style="color: var(--text-muted);">&mdash;</span>
+            {{end}}
+          </td>
+          <td>
+            {{if .EnrolmentID}}
+              <form method="POST" action="/institution/enrolments/{{.EnrolmentID}}/attest" style="display:inline;">
+                <input type="hidden" name="_csrf" value="{{$.CSRFToken}}">
+                <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">Attest</button>
+              </form>
+            {{else}}
+              <small style="color: var(--text-muted);">Unenrolled</small>
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+    <p style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem 0;">No rows match the selected filter criteria.</p>
+  {{end}}
+</div>
+

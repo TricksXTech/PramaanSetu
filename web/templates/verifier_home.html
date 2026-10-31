@@ -1,0 +1,129 @@
+{{define "title"}}Verifier Portal &bull; APAAR Verification{{end}}
+
+{{define "content"}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title">Credential Verification Portal</h2>
+      <p class="card-subtitle">Authenticated Verifier (Employer / Regulator / Academic Body)</p>
+    </div>
+    <span class="badge badge-warning" style="font-size: 0.95rem;">Authenticated Verifier: {{.User.Email}}</span>
+  </div>
+
+  <div style="margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 8px;">
+    <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;">Verify Student Credential</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+      Enter the student's opaque credential ID or credential UUID. Verification evaluates the 6 distinct states and enforces active student consent dynamically on every request (Rule #5 &amp; #6).
+    </p>
+
+    {{if .FlashError}}
+    <div style="padding: 0.75rem 1rem; background: #fee2e2; border: 1px solid #f87171; border-radius: 6px; color: #991b1b; margin-bottom: 1rem; font-size: 0.9rem;">
+      &#9888; {{.FlashError}}
+    </div>
+    {{end}}
+
+    <form action="/verifier/lookup" method="POST" style="display: flex; gap: 0.75rem; max-width: 650px;">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <input type="text" name="credential_input" value="{{.SearchTerm}}" placeholder="Enter opaque ID (e.g. opq_...) or UUID..." required style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;">
+      <button type="submit" class="btn btn-primary" style="cursor: pointer; white-space: nowrap;">
+        Verify Record
+      </button>
+    </form>
+  </div>
+</div>
+
+{{if .Verification}}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <h3 class="card-title" style="margin: 0;">Verification Outcome</h3>
+    <span style="font-size: 0.8rem; color: var(--text-muted);">Verified at: {{.Verification.VerifiedAt.Format "02 Jan 2006 15:04:05 UTC"}}</span>
+  </div>
+
+  <div style="margin-top: 1.25rem;">
+    <h4 style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+      6 Distinct Verification States (Non-negotiable Rule #5)
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+      <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">1. Format Valid</div>
+        <div style="font-weight: 700; color: {{if .Verification.FormatValid}}var(--success){{else}}var(--danger){{end}};">
+          {{if .Verification.FormatValid}}&#10003; 12-Digit ASCII{{else}}&#10007; Invalid Format{{end}}
+        </div>
+      </div>
+
+      <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">2. Registry Matched</div>
+        <div style="font-weight: 700; color: {{if .Verification.RegistryMatched}}var(--success){{else}}var(--danger){{end}};">
+          {{if .Verification.RegistryMatched}}&#10003; Matched ({{.Verification.RegistryProvenance}}){{else}}&#10007; Not Found{{end}}
+        </div>
+      </div>
+
+      <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">3. Rules Passed</div>
+        <div style="font-weight: 700; color: {{if .Verification.RulesPassed}}var(--success){{else}}var(--danger){{end}};">
+          {{if .Verification.RulesPassed}}&#10003; V1-V6 Passed{{else}}&#10007; Rules Failed{{end}}
+        </div>
+      </div>
+
+      <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">4. Institution Attested</div>
+        <div style="font-weight: 700; color: {{if .Verification.InstitutionAttested}}var(--success){{else}}var(--danger){{end}};">
+          {{if .Verification.InstitutionAttested}}&#10003; Current Attestation{{else}}&#10007; Not Attested / Superseded{{end}}
+        </div>
+      </div>
+
+      <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">5. Signature Valid</div>
+        <div style="font-weight: 700; color: {{if .Verification.SignatureValid}}var(--success){{else}}var(--danger){{end}};">
+          {{if .Verification.SignatureValid}}&#10003; Ed25519 Verified{{else}}&#10007; Invalid Signature{{end}}
+        </div>
+      </div>
+
+      <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">6. Credential Current</div>
+        <div style="font-weight: 700; color: {{if .Verification.CredentialCurrent}}var(--success){{else}}var(--danger){{end}};">
+          {{if .Verification.CredentialCurrent}}&#10003; Current &amp; Active{{else}}&#10007; Revoked / Expired{{end}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+    <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Student Consent Status &amp; Permitted Disclosures</h4>
+    {{if .Verification.ConsentActive}}
+    <div style="padding: 1rem; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; margin-bottom: 1rem;">
+      <div style="font-weight: 600; color: #047857; margin-bottom: 0.25rem;">&#10004; Active Student Consent Verified</div>
+      <p style="font-size: 0.85rem; color: #065f46; margin: 0;">
+        Student has actively consented to disclose credential fields to your verifier identity.
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Permitted Field</th>
+          <th>Verified Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $k, $v := .Verification.PermittedFields}}
+        <tr>
+          <td><code>{{$k}}</code></td>
+          <td><strong>{{$v}}</strong></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <div style="padding: 1rem; background: #fffbeb; border: 1px solid #f59e0b; border-radius: 6px;">
+      <div style="font-weight: 600; color: #b45309; margin-bottom: 0.25rem;">&#9888; Student Consent Required (Non-negotiable Rule #6)</div>
+      <p style="font-size: 0.85rem; color: #92400e; margin: 0;">
+        Cryptographic attestation and validity checks succeeded, but the student has not granted active consent for this verifier.
+        <strong>Zero personal data is disclosed.</strong>
+      </p>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}
