@@ -8,10 +8,11 @@ RUN apk add --no-cache git gcc musl-dev
 
 # Copy module files and download dependencies
 COPY go.mod go.sum ./
-RUN go mod download
+RUN sed -i 's/^go 1.26.*/go 1.24/' go.mod && go mod download
 
 # Copy source tree
 COPY . .
+RUN sed -i 's/^go 1.26.*/go 1.24/' go.mod
 
 # Build application server, seed, and reset utilities
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/server ./cmd/server
@@ -39,7 +40,7 @@ COPY docs /app/docs
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=5s --timeout=3s --retries=5 CMD curl -f http://localhost:8080/healthz || exit 1
+HEALTHCHECK --interval=5s --timeout=3s --retries=5 CMD curl -f http://localhost:${PORT:-8080}/healthz || exit 1
 
 CMD ["/app/server"]
 

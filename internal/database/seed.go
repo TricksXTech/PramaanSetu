@@ -234,3 +234,4 @@ func RunSeed(ctx context.Context, db *pgxpool.Pool) error {
 
 	return nil
 }
+

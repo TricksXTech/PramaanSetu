@@ -103,3 +103,4 @@ Once Render finishes the initial build (approx. 2 minutes):
   Render's PostgreSQL 16 grants extension creation permissions to `apaar_user`. The server runs `migrations/001_initial_schema.sql` automatically on startup to install them.
 * **Auto-Sleep on Free Tier**:  
   Free web services on Render spin down after 15 minutes of inactivity. When a new request arrives, it spins up in ~30 seconds; the health check and auto-seed ensure instant recovery without data loss.
+
