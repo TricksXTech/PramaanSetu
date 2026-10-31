@@ -51,15 +51,19 @@ func main() {
 
 	log.Println("[Server] Starting APAAR Student Data Verification System...")
 
-	// 1. Connect to PostgreSQL
-	dbPool, err := database.ConnectPool(ctx, dbURL)
-	if err != nil {
-		log.Printf("[Server] Database connection error: %v (retrying in 2s...)", err)
-		time.Sleep(2 * time.Second)
+	// 1. Connect to PostgreSQL with retry loop for cloud deployments (e.g. Render / Docker)
+	var dbPool *pgxpool.Pool
+	var err error
+	for attempts := 1; attempts <= 10; attempts++ {
 		dbPool, err = database.ConnectPool(ctx, dbURL)
-		if err != nil {
-			log.Fatalf("[Server] Fatal: cannot connect to database: %v", err)
+		if err == nil {
+			break
 		}
+		log.Printf("[Server] Database connection attempt %d/10 failed: %v (retrying in 2s...)", attempts, err)
+		time.Sleep(2 * time.Second)
+	}
+	if err != nil {
+		log.Fatalf("[Server] Fatal: cannot connect to database after 10 attempts: %v", err)
 	}
 	defer dbPool.Close()
 
@@ -76,6 +80,18 @@ func main() {
 			if err := database.RunMigrations(ctx, dbPool, string(b)); err != nil {
 				log.Printf("[Server] Migrations warning on %s: %v", mf, err)
 			}
+		}
+	}
+
+	// 2.1 Auto-seed baseline demonstration accounts on cloud deploy or empty database
+	var userCount int
+	_ = dbPool.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&userCount)
+	if userCount == 0 || os.Getenv("AUTO_SEED") == "true" {
+		log.Println("[Server] No users detected or AUTO_SEED enabled: executing initial seed...")
+		if err := database.RunSeed(ctx, dbPool); err != nil {
+			log.Printf("[Server] Initial seed warning: %v", err)
+		} else {
+			log.Println("[Server] Initial seed completed successfully.")
 		}
 	}
 

@@ -94,9 +94,14 @@ flowchart TD
 
 ---
 
-## 4. Quick Start (Clean Machine)
+## 4. Cloud Deployment & Quick Start
 
-### Prerequisites
+### 1-Click Cloud Deploy on Render (with Managed PostgreSQL 16)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://dashboard.render.com/blueprints/new?repo=https%3A%2F%2Fgithub.com%2FTricksXTech%2FPramaanSetu)
+
+Deploy PramaanSetu and a fully managed PostgreSQL 16 database to Render with one click via our [Render Blueprint (`render.yaml`)](render.yaml). See the complete [Render Cloud Deployment Guide](docs/deploy-render.md) for step-by-step instructions.
+
+### Prerequisites (For Local / Bare Metal Run)
 * **Docker & Docker Compose** (Recommended for Linux / Mac / Windows with Docker Desktop) **OR**
 * **Go 1.24+** and **PostgreSQL 16** installed locally.
 
@@ -207,3 +212,4 @@ go run ./cmd/benchmark/main.go
 * **Ed25519 Key Rotation Specification**: [`docs/key-rotation.md`](file:///d:/SIH/docs/key-rotation.md)
 * **UI Walkthrough & Accessibility Audit**: [`docs/evidence/walkthrough_checklist.md`](file:///d:/SIH/docs/evidence/walkthrough_checklist.md)
 * **Venue-Failure & Offline Operation Plan**: [`docs/venue-failure-plan.md`](file:///d:/SIH/docs/venue-failure-plan.md)
+* **Render Cloud Deployment Runbook**: [`docs/deploy-render.md`](file:///d:/SIH/docs/deploy-render.md)
