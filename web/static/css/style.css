@@ -228,6 +228,11 @@ th {
   color: #92400e;
 }
 
+.badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
 .badge-success {
   background-color: #d1fae5;
   color: #065f46;

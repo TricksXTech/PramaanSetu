@@ -40,3 +40,4 @@ func TestRateLimiter_AllowsUnderLimit(t *testing.T) {
 		t.Fatalf("request after window expiry should have been allowed")
 	}
 }
+

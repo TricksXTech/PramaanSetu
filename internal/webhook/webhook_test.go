@@ -107,3 +107,4 @@ func TestWebhook_HMACSigningAndVerification(t *testing.T) {
 		t.Fatalf("expected error on forced failure, but got nil")
 	}
 }
+

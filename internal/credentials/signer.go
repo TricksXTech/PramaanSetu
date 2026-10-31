@@ -42,12 +42,16 @@ func NewEd25519Signer(keyID string) (*Ed25519Signer, error) {
 	var priv ed25519.PrivateKey
 
 	privHex := os.Getenv("SIGNING_PRIVATE_KEY")
+	if (os.Getenv("APP_ENV") == "production" || os.Getenv("ENV") == "production") && privHex == "" {
+		return nil, errors.New("SIGNING_PRIVATE_KEY environment variable is required in production mode")
+	}
 	if privHex != "" {
 		seed, err := hex.DecodeString(privHex)
-		if err == nil && len(seed) == ed25519.SeedSize {
-			priv = ed25519.NewKeyFromSeed(seed)
-			pub = priv.Public().(ed25519.PublicKey)
+		if err != nil || len(seed) != ed25519.SeedSize {
+			return nil, fmt.Errorf("invalid SIGNING_PRIVATE_KEY: must be 64-hex character seed: %w", err)
 		}
+		priv = ed25519.NewKeyFromSeed(seed)
+		pub = priv.Public().(ed25519.PublicKey)
 	}
 
 	if priv == nil {
@@ -89,6 +93,21 @@ func (s *Ed25519Signer) KeyID() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.keyID
+}
+
+// PublicKey returns the current active public key
+func (s *Ed25519Signer) PublicKey() ed25519.PublicKey {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.publicKey
+}
+
+// GetPublicKey returns the public key for a given key ID from the keyring
+func (s *Ed25519Signer) GetPublicKey(keyID string) (ed25519.PublicKey, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	pub, exists := s.publicKeys[keyID]
+	return pub, exists
 }
 
 // Sign signs the canonical payload bytes using Ed25519

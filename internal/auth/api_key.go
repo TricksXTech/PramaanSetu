@@ -206,3 +206,4 @@ func (s *APIKeyService) AuthenticateAndAuthorizeKey(
 
 	return nil, ErrInvalidAPIKey
 }
+

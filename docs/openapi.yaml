@@ -93,6 +93,7 @@ paths:
       summary: Get Upload Job Status & Outcomes
       description: |
         Retrieves job processing status, aggregate outcome counts, and per-row outcomes.
+        Requires institution-scoped API key with scope `uploads:read`.
         Enforces tenant ownership in query (Non-negotiable Rule #2).
       operationId: getUploadStatus
       security:
@@ -147,7 +148,7 @@ paths:
     patch:
       summary: Patch Enrolment Record (Optimistic Concurrency)
       description: |
-        Updates an existing enrolment. Requires `expected_version` for optimistic concurrency.
+        Updates an existing enrolment. Requires `expected_version` for optimistic concurrency and scope `enrolments:write`.
         Attempts to overwrite shared identity fields (APAAR ID, name, DOB) are strictly rejected (Rule #1).
       operationId: patchEnrolment
       security:
@@ -201,6 +202,7 @@ paths:
       summary: Verify Student Credential (Consent-Gated)
       description: |
         Verifies credential digital signature, current attestation, and evaluates dynamic student consent.
+        Requires verifier-scoped API key with scope `credentials:verify` or active verifier session.
         Without active consent, returns 6 verification states with ZERO student personal data.
       operationId: verifyCredential
       security:

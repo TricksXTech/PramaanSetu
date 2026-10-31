@@ -55,3 +55,4 @@ Under Non-negotiable Rule #5, credential states are kept distinct:
    - `revoked_at IS NULL` (not revoked).
    - `expires_at > CURRENT_TIMESTAMP` (not expired).
    - `supersedes_id` check: no newer credential issued for this enrolment.
+

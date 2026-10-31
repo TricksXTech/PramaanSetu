@@ -1,0 +1,27 @@
+{
+  "fixture_file": "scripts/fixtures/test_admissions.csv",
+  "total_rows": 7,
+  "institutions": {
+    "INST-001": {
+      "total": 7,
+      "outcomes": {
+        "accepted": 4,
+        "flagged_held": 2,
+        "rejected_invalid": 1
+      },
+      "flags_by_rule": {
+        "V1": 1,
+        "V3": 1,
+        "V6": 2
+      }
+    }
+  },
+  "overall_summary": {
+    "accepted": 4,
+    "flagged_held": 2,
+    "rejected_invalid": 1,
+    "pending_registry": 0,
+    "no_op_identical": 0,
+    "conflict_stale": 0
+  }
+}

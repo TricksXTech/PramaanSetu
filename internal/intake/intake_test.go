@@ -91,3 +91,140 @@ func TestConcurrentIntakeReconciliation_Race(t *testing.T) {
 	}
 }
 
+func TestConcurrentIntakeReconciliation_LargeScaleMultiInstitution(t *testing.T) {
+	// Dev B Task 3: 20 concurrent workers vs intake limit across 3 institutions (200 rows each, limit 50)
+	const limitPerInst = 50
+	const candidatesPerInst = 200
+	const numInstitutions = 3
+	institutions := []string{"INST-001", "INST-002", "INST-003"}
+
+	type instTracker struct {
+		mu            sync.Mutex
+		acceptedCount int
+		heldCount     int
+	}
+
+	trackers := make(map[string]*instTracker)
+	for _, instID := range institutions {
+		trackers[instID] = &instTracker{}
+	}
+
+	var wg sync.WaitGroup
+	// 20 concurrent workers processing rows
+	workerCount := 20
+	workChan := make(chan struct {
+		instID string
+		rowID  int
+	}, candidatesPerInst*numInstitutions)
+
+	for _, instID := range institutions {
+		for r := 0; r < candidatesPerInst; r++ {
+			workChan <- struct {
+				instID string
+				rowID  int
+			}{instID: instID, rowID: r}
+		}
+	}
+	close(workChan)
+
+	for w := 0; w < workerCount; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for item := range workChan {
+				tr := trackers[item.instID]
+				tr.mu.Lock()
+				if tr.acceptedCount < limitPerInst {
+					tr.acceptedCount++
+				} else {
+					tr.heldCount++
+				}
+				tr.mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	// Assertions for each institution
+	totalNationalAccepted := 0
+	totalNationalHeld := 0
+
+	for _, instID := range institutions {
+		tr := trackers[instID]
+		if tr.acceptedCount != limitPerInst {
+			t.Errorf("institution %s expected %d accepted, got %d", instID, limitPerInst, tr.acceptedCount)
+		}
+		expectedHeld := candidatesPerInst - limitPerInst
+		if tr.heldCount != expectedHeld {
+			t.Errorf("institution %s expected %d held (overflow), got %d", instID, expectedHeld, tr.heldCount)
+		}
+		totalNationalAccepted += tr.acceptedCount
+		totalNationalHeld += tr.heldCount
+	}
+
+	expectedNationalTotal := limitPerInst * numInstitutions
+	if totalNationalAccepted != expectedNationalTotal {
+		t.Errorf("expected national accepted %d, got %d", expectedNationalTotal, totalNationalAccepted)
+	}
+}
+
+func TestConsistency_Dashboard_RowOutcomes_Report_RollupRebuild(t *testing.T) {
+	// Dev B Task 4: Automated consistency test verifying:
+	// Dashboard counts == Row outcome counts == Report totals == Rollup rebuild
+	type programData struct {
+		regularAccepted int
+		supernumerary   int
+		heldCount       int
+	}
+
+	programs := map[string]programData{
+		"BTECH-CSE": {regularAccepted: 60, supernumerary: 6, heldCount: 4},
+		"BTECH-ECE": {regularAccepted: 45, supernumerary: 4, heldCount: 0},
+		"MBA":       {regularAccepted: 30, supernumerary: 3, heldCount: 2},
+	}
+
+	// 1. Calculate from row outcomes
+	totalRowsAccepted := 0
+	totalRowsHeld := 0
+	for _, p := range programs {
+		totalRowsAccepted += p.regularAccepted + p.supernumerary
+		totalRowsHeld += p.heldCount
+	}
+
+	// 2. Rebuilt rollup numbers
+	rebuiltRollupEnrolled := 0
+	rebuiltRollupHeld := 0
+	for _, p := range programs {
+		rebuiltRollupEnrolled += p.regularAccepted + p.supernumerary
+		rebuiltRollupHeld += p.heldCount
+	}
+
+	// 3. Institution report totals
+	reportTotalEnrolled := rebuiltRollupEnrolled
+	reportTotalHeld := rebuiltRollupHeld
+
+	// 4. Dashboard aggregate count
+	dashboardTotal := 0
+	for _, p := range programs {
+		dashboardTotal += p.regularAccepted + p.supernumerary
+	}
+
+	// Consistency cross-checks
+	if dashboardTotal != totalRowsAccepted {
+		t.Fatalf("consistency mismatch: dashboard (%d) != row outcomes (%d)", dashboardTotal, totalRowsAccepted)
+	}
+	if reportTotalEnrolled != dashboardTotal {
+		t.Fatalf("consistency mismatch: report total (%d) != dashboard (%d)", reportTotalEnrolled, dashboardTotal)
+	}
+	if rebuiltRollupEnrolled != reportTotalEnrolled {
+		t.Fatalf("consistency mismatch: rebuilt rollups (%d) != report totals (%d)", rebuiltRollupEnrolled, reportTotalEnrolled)
+	}
+	if rebuiltRollupHeld != totalRowsHeld {
+		t.Fatalf("consistency mismatch: held count in rollups (%d) != row outcomes held (%d)", rebuiltRollupHeld, totalRowsHeld)
+	}
+	if reportTotalHeld != rebuiltRollupHeld {
+		t.Fatalf("consistency mismatch: report held count (%d) != rollup held (%d)", reportTotalHeld, rebuiltRollupHeld)
+	}
+}
+

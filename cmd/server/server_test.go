@@ -483,3 +483,138 @@ func TestAICTEReviews_DecisionSubmission_Audited(t *testing.T) {
 		t.Fatalf("expected valid_concurrent_study in response, got: %s", w3.Body.String())
 	}
 }
+
+func TestSystematicCrossTenantIsolation_EveryEntity(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Setup DTU context (Institution A)
+	dtuScope := &tenant.Scope{
+		UserID:        uuid.New(),
+		Role:          models.RoleInstitutionAdmin,
+		InstitutionID: "INST-001",
+	}
+
+	// Entities belonging to COEP (Institution B)
+	coepEntities := []struct {
+		Entity     string
+		Method     string
+		Path       string
+		TargetInst string
+	}{
+		{"UploadJob", http.MethodGet, "/api/v1/uploads/job-coep-101", "INST-002"},
+		{"JobProgress", http.MethodGet, "/institution/jobs/job-coep-101/progress", "INST-002"},
+		{"JobRows", http.MethodGet, "/institution/jobs/job-coep-101/rows", "INST-002"},
+		{"EnrolmentPatch", http.MethodPatch, "/api/v1/enrolments/enr-coep-201", "INST-002"},
+		{"EnrolmentAttest", http.MethodPost, "/institution/enrolments/enr-coep-201/attest", "INST-002"},
+		{"FlagReview", http.MethodPost, "/institution/flags/flag-coep-301/review", "INST-002"},
+		{"CredentialRevoke", http.MethodPost, "/credentials/cred-coep-401/revoke", "INST-002"},
+		{"APIKeyRevoke", http.MethodPost, "/institution/api-keys/key-coep-501/revoke", "INST-002"},
+	}
+
+	for _, tc := range coepEntities {
+		t.Run(tc.Entity, func(t *testing.T) {
+			r := gin.New()
+			r.Use(func(c *gin.Context) {
+				tenant.SetInContext(c, dtuScope)
+				c.Next()
+			})
+
+			handler := func(c *gin.Context) {
+				scope, err := tenant.FromContext(c)
+				if err != nil {
+					c.AbortWithStatus(http.StatusUnauthorized)
+					return
+				}
+				// Enforce tenant ownership (Rule #2)
+				if err := scope.EnforceInstitution(tc.TargetInst); err != nil {
+					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+						"error":   "Forbidden",
+						"message": err.Error(),
+					})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{"status": "accessed"})
+			}
+
+			r.Handle(tc.Method, tc.Path, handler)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(tc.Method, tc.Path, nil)
+			r.ServeHTTP(w, req)
+
+			if w.Code != http.StatusForbidden {
+				t.Fatalf("expected 403 Forbidden for cross-tenant access to %s, got %d", tc.Entity, w.Code)
+			}
+		})
+	}
+}
+
+func TestRoleAuthorizationMatrix_Comprehensive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		Route       string
+		AllowedRole string
+		TestRoles   []string
+	}{
+		{"/aicte/dashboard", models.RoleAICTEAdmin, []string{models.RoleInstitutionAdmin, models.RoleStudent, models.RoleVerifier}},
+		{"/institution/dashboard", models.RoleInstitutionAdmin, []string{models.RoleAICTEAdmin, models.RoleStudent, models.RoleVerifier}},
+		{"/student/consent", models.RoleStudent, []string{models.RoleAICTEAdmin, models.RoleInstitutionAdmin, models.RoleVerifier}},
+		{"/verifier/verify", models.RoleVerifier, []string{models.RoleAICTEAdmin, models.RoleInstitutionAdmin, models.RoleStudent}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Route, func(t *testing.T) {
+			r := gin.New()
+			r.Use(func(c *gin.Context) {
+				// Inject caller role from header for matrix testing
+				role := c.GetHeader("X-Test-Role")
+				if role != "" {
+					u := &models.User{
+						ID:   uuid.New(),
+						Role: role,
+					}
+					c.Set(auth.UserContextKey, u)
+					scope := &tenant.Scope{
+						UserID: u.ID,
+						Role:   role,
+					}
+					tenant.SetInContext(c, scope)
+				}
+				c.Next()
+			})
+
+			r.GET(tc.Route, auth.RequireAuth(), auth.RequireRoles(tc.AllowedRole), func(c *gin.Context) {
+				c.String(http.StatusOK, "authorized")
+			})
+
+			// 1. Unauthenticated request -> must redirect to /login
+			wUnauth := httptest.NewRecorder()
+			reqUnauth, _ := http.NewRequest(http.MethodGet, tc.Route, nil)
+			r.ServeHTTP(wUnauth, reqUnauth)
+			if wUnauth.Code != http.StatusSeeOther || wUnauth.Header().Get("Location") != "/login" {
+				t.Fatalf("%s unauthenticated expected redirect to /login, got code %d", tc.Route, wUnauth.Code)
+			}
+
+			// 2. Allowed role request -> must return 200 OK
+			wAllowed := httptest.NewRecorder()
+			reqAllowed, _ := http.NewRequest(http.MethodGet, tc.Route, nil)
+			reqAllowed.Header.Set("X-Test-Role", tc.AllowedRole)
+			r.ServeHTTP(wAllowed, reqAllowed)
+			if wAllowed.Code != http.StatusOK {
+				t.Fatalf("%s allowed role %s expected 200 OK, got %d", tc.Route, tc.AllowedRole, wAllowed.Code)
+			}
+
+			// 3. Denied roles requests -> must return 403 Forbidden
+			for _, deniedRole := range tc.TestRoles {
+				wDenied := httptest.NewRecorder()
+				reqDenied, _ := http.NewRequest(http.MethodGet, tc.Route, nil)
+				reqDenied.Header.Set("X-Test-Role", deniedRole)
+				r.ServeHTTP(wDenied, reqDenied)
+				if wDenied.Code != http.StatusForbidden {
+					t.Fatalf("%s denied role %s expected 403 Forbidden, got %d", tc.Route, deniedRole, wDenied.Code)
+				}
+			}
+		})
+	}
+}
