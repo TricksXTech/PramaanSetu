@@ -15,6 +15,7 @@
       <span class="brand-badge">AICTE APAAR Verification</span>
     </div>
     <div class="user-nav">
+      <a href="/docs/api" target="_blank" class="btn btn-secondary btn-sm" style="margin-right: 0.5rem; text-decoration: none;">&#128196; API Docs</a>
       {{if .User}}
         <span class="user-badge">{{.User.Role}} | {{.User.Email}}</span>
         <form method="POST" action="/logout" style="display:inline;">

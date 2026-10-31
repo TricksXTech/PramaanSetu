@@ -618,3 +618,42 @@ func TestRoleAuthorizationMatrix_Comprehensive(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIDocumentationRoutes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+
+	loadTemplates(r)
+
+	r.GET("/docs/openapi.yaml", func(c *gin.Context) {
+		c.Header("Content-Type", "application/yaml")
+		c.File("../../docs/openapi.yaml")
+	})
+	r.GET("/docs/api", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "api_docs.html", nil)
+	})
+
+	// Test GET /docs/api
+	w1 := httptest.NewRecorder()
+	req1, _ := http.NewRequest(http.MethodGet, "/docs/api", nil)
+	r.ServeHTTP(w1, req1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for /docs/api, got %d", w1.Code)
+	}
+	body1 := w1.Body.String()
+	if !strings.Contains(body1, "APAAR Verification API Documentation") || !strings.Contains(body1, "/api/v1/uploads") {
+		t.Fatalf("expected /docs/api to contain API Documentation content, got length %d: %s", len(body1), body1[:min(len(body1), 200)])
+	}
+
+	// Test GET /docs/openapi.yaml
+	w2 := httptest.NewRecorder()
+	req2, _ := http.NewRequest(http.MethodGet, "/docs/openapi.yaml", nil)
+	r.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for /docs/openapi.yaml, got %d", w2.Code)
+	}
+	body2 := w2.Body.String()
+	if !strings.Contains(body2, "openapi: 3.0.3") {
+		t.Fatalf("expected /docs/openapi.yaml to contain OpenAPI spec, got: %s", body2[:min(len(body2), 200)])
+	}
+}

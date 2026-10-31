@@ -2303,8 +2303,13 @@ func loadTemplates(r *gin.Engine) {
 		templates: make(map[string]*template.Template),
 	}
 
-	layoutPath := filepath.Join("web", "templates", "layout.html")
-	files, err := filepath.Glob(filepath.Join("web", "templates", "*.html"))
+	tmplDir := filepath.Join("web", "templates")
+	if _, err := os.Stat(tmplDir); os.IsNotExist(err) {
+		tmplDir = filepath.Join("..", "..", "web", "templates")
+	}
+
+	layoutPath := filepath.Join(tmplDir, "layout.html")
+	files, err := filepath.Glob(filepath.Join(tmplDir, "*.html"))
 	if err != nil {
 		log.Fatalf("[Template] Failed to glob templates: %v", err)
 	}
@@ -2315,10 +2320,16 @@ func loadTemplates(r *gin.Engine) {
 			continue
 		}
 
-		if name == "certificate.html" || name == "report_printable.html" {
-			renderer.templates[name] = template.Must(template.ParseFiles(file))
-		} else {
+		b, err := os.ReadFile(file)
+		if err != nil {
+			continue
+		}
+		content := string(b)
+
+		if strings.Contains(content, `{{define "content"`) {
 			renderer.templates[name] = template.Must(template.ParseFiles(layoutPath, file))
+		} else {
+			renderer.templates[name] = template.Must(template.ParseFiles(file))
 		}
 	}
 
